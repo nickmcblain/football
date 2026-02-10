@@ -45,6 +45,19 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+## Password Protection
+
+Set these environment variables to enable global password protection:
+
+```bash
+BOMBERS_FC_PASSWORD=your-password
+BOMBERS_FC_AUTH_SECRET=any-random-secret-string
+```
+
+- All app routes and APIs require authentication after this is set.
+- Public exceptions: `/leaderboard` and `/api/leaderboard`.
+- Visit `/login` to enter the password and create an auth cookie.
+
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
