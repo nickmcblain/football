@@ -1,5 +1,34 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Data Backend
+
+This app now uses Convex for runtime data reads/writes.
+
+The existing SQLite file (`db.sqlite`) is kept as a snapshot and is not deleted by the migration script.
+
+## SQLite -> Convex Migration
+
+1. Create/configure your Convex project and set `NEXT_PUBLIC_CONVEX_URL` (or `CONVEX_URL`).
+2. Start Convex locally (or point to your deployed Convex backend):
+
+```bash
+bun convex:dev
+```
+
+3. Import all SQLite data into Convex:
+
+```bash
+bun migrate:sqlite-to-convex
+```
+
+Optional: pass a custom SQLite file path:
+
+```bash
+bun migrate:sqlite-to-convex /absolute/path/to/db.sqlite
+```
+
+The migration script opens SQLite in read-only mode and only writes to Convex.
+
 ## Getting Started
 
 First, run the development server:

@@ -26,7 +26,7 @@ export async function PUT(request: Request, { params }: Params) {
 
     const input: AssignTeamsInput = { teamA, teamB };
 
-    const match = assignTeams(matchId, input);
+    const match = await assignTeams(matchId, input);
     if (!match) {
       return NextResponse.json({ error: "Match not found" }, { status: 404 });
     }

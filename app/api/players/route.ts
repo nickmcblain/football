@@ -4,7 +4,7 @@ import type { CreatePlayerInput, Position } from "@/lib/types";
 
 export async function GET() {
   try {
-    const players = getAllPlayers();
+    const players = await getAllPlayers();
     return NextResponse.json(players);
   } catch (error) {
     return NextResponse.json(
@@ -35,7 +35,7 @@ export async function POST(request: Request) {
       position: body.position,
     };
 
-    const player = createPlayer(input);
+    const player = await createPlayer(input);
     return NextResponse.json(player, { status: 201 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to create player";

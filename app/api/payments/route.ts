@@ -3,7 +3,7 @@ import { getPaymentMatrix } from "@/lib/queries";
 
 export async function GET() {
   try {
-    const matrix = getPaymentMatrix();
+    const matrix = await getPaymentMatrix();
     return NextResponse.json(matrix);
   } catch (error) {
     return NextResponse.json(

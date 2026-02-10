@@ -3,7 +3,7 @@ import { getLeaderboard } from "@/lib/queries";
 
 export async function GET() {
   try {
-    const leaderboard = getLeaderboard();
+    const leaderboard = await getLeaderboard();
     return NextResponse.json(leaderboard);
   } catch (error) {
     return NextResponse.json(

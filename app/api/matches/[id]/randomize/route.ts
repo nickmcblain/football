@@ -11,7 +11,7 @@ export async function POST(request: Request, { params }: Params) {
       return NextResponse.json({ error: "Invalid match ID" }, { status: 400 });
     }
 
-    const match = getMatchById(matchId);
+    const match = await getMatchById(matchId);
     if (!match) {
       return NextResponse.json({ error: "Match not found" }, { status: 404 });
     }
@@ -40,13 +40,13 @@ export async function POST(request: Request, { params }: Params) {
       );
     }
 
-    const { teamA, teamB } = randomizeTeams({
+    const { teamA, teamB } = await randomizeTeams({
       playerIds: attendees,
       lockedTeamA,
       lockedTeamB,
     });
 
-    const updatedMatch = assignTeams(matchId, { teamA, teamB });
+    const updatedMatch = await assignTeams(matchId, { teamA, teamB });
     if (!updatedMatch) {
       return NextResponse.json({ error: "Failed to assign teams" }, { status: 500 });
     }

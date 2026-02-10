@@ -12,7 +12,7 @@ export async function GET(_request: Request, { params }: Params) {
       return NextResponse.json({ error: "Invalid match ID" }, { status: 400 });
     }
 
-    const match = getMatchById(matchId);
+    const match = await getMatchById(matchId);
     if (!match) {
       return NextResponse.json({ error: "Match not found" }, { status: 404 });
     }
@@ -72,7 +72,7 @@ export async function PUT(request: Request, { params }: Params) {
       input.pitch = body.pitch;
     }
 
-    const match = updateMatch(matchId, input);
+    const match = await updateMatch(matchId, input);
     if (!match) {
       return NextResponse.json({ error: "Match not found" }, { status: 404 });
     }
@@ -94,7 +94,7 @@ export async function DELETE(_request: Request, { params }: Params) {
       return NextResponse.json({ error: "Invalid match ID" }, { status: 400 });
     }
 
-    const deleted = deleteMatch(matchId);
+    const deleted = await deleteMatch(matchId);
     if (!deleted) {
       return NextResponse.json({ error: "Match not found" }, { status: 404 });
     }

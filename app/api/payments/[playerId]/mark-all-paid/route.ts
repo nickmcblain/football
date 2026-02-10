@@ -12,12 +12,12 @@ export async function POST(_request: Request, { params }: Params) {
       return NextResponse.json({ error: "Invalid player ID" }, { status: 400 });
     }
 
-    const player = getPlayerById(playerId);
+    const player = await getPlayerById(playerId);
     if (!player) {
       return NextResponse.json({ error: "Player not found" }, { status: 404 });
     }
 
-    markAllPaymentsPaidForPlayer(playerId);
+    await markAllPaymentsPaidForPlayer(playerId);
 
     return NextResponse.json({ success: true });
   } catch (error) {

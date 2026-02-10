@@ -19,7 +19,7 @@ export async function PUT(request: Request, { params }: Params) {
       return NextResponse.json({ error: "paid must be a boolean" }, { status: 400 });
     }
 
-    const payment = markPaymentPaid(playerId, matchId, body.paid);
+    const payment = await markPaymentPaid(playerId, matchId, body.paid);
     if (!payment) {
       return NextResponse.json({ error: "Payment not found" }, { status: 404 });
     }

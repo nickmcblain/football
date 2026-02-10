@@ -12,7 +12,7 @@ export async function GET(_request: Request, { params }: Params) {
       return NextResponse.json({ error: "Invalid player ID" }, { status: 400 });
     }
 
-    const player = getPlayerById(playerId);
+    const player = await getPlayerById(playerId);
     if (!player) {
       return NextResponse.json({ error: "Player not found" }, { status: 404 });
     }
@@ -55,7 +55,7 @@ export async function PUT(request: Request, { params }: Params) {
       input.position = body.position;
     }
 
-    const player = updatePlayer(playerId, input);
+    const player = await updatePlayer(playerId, input);
     if (!player) {
       return NextResponse.json({ error: "Player not found" }, { status: 404 });
     }
@@ -76,7 +76,7 @@ export async function DELETE(_request: Request, { params }: Params) {
       return NextResponse.json({ error: "Invalid player ID" }, { status: 400 });
     }
 
-    const deleted = deletePlayer(playerId);
+    const deleted = await deletePlayer(playerId);
     if (!deleted) {
       return NextResponse.json({ error: "Player not found" }, { status: 404 });
     }

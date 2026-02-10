@@ -22,7 +22,7 @@ export async function PUT(request: Request, { params }: Params) {
       );
     }
 
-    const match = setMatchWinner(matchId, body.winner);
+    const match = await setMatchWinner(matchId, body.winner);
     if (!match) {
       return NextResponse.json({ error: "Match not found" }, { status: 404 });
     }

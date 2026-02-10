@@ -4,7 +4,7 @@ import type { CreateMatchInput } from "@/lib/types";
 
 export async function GET() {
   try {
-    const matches = getAllMatches();
+    const matches = await getAllMatches();
     return NextResponse.json(matches);
   } catch (error) {
     return NextResponse.json(
@@ -38,7 +38,7 @@ export async function POST(request: Request) {
       pitch: typeof body.pitch === "string" ? body.pitch : undefined,
     };
 
-    const match = createMatch(input);
+    const match = await createMatch(input);
     return NextResponse.json(match, { status: 201 });
   } catch (error) {
     return NextResponse.json(
