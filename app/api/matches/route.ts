@@ -2,9 +2,11 @@ import { NextResponse } from "next/server";
 import { getAllMatches, createMatch } from "@/lib/queries";
 import type { CreateMatchInput } from "@/lib/types";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const matches = await getAllMatches();
+    const seasonParam = new URL(request.url).searchParams.get("seasonId");
+    const seasonId = seasonParam ? Number(seasonParam) : undefined;
+    const matches = await getAllMatches(seasonId);
     return NextResponse.json(matches);
   } catch (error) {
     return NextResponse.json(

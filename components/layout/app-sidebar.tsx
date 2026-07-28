@@ -2,12 +2,13 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { IconUsers, IconBallFootball, IconTrophy, IconCash } from "@tabler/icons-react"
+import { IconUsers, IconBallFootball, IconTrophy, IconCash, IconCalendarStats } from "@tabler/icons-react"
 import { cn } from "@/lib/utils"
 
 const navItems = [
   { href: "/players", label: "Players", icon: IconUsers },
   { href: "/matches", label: "Matches", icon: IconBallFootball },
+  { href: "/seasons", label: "Seasons", icon: IconCalendarStats },
   { href: "/leaderboard", label: "Leaderboard", icon: IconTrophy },
   { href: "/payments", label: "Payments", icon: IconCash },
 ]

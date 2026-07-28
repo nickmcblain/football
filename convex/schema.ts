@@ -14,6 +14,11 @@ const winnerValidator = v.union(
   v.literal("Not Played")
 );
 
+const seasonStatusValidator = v.union(
+  v.literal("active"),
+  v.literal("closed")
+);
+
 export default defineSchema({
   players: defineTable({
     legacyId: v.number(),
@@ -22,6 +27,7 @@ export default defineSchema({
     points: v.number(),
     totalOwed: v.number(),
     paid: v.boolean(),
+    active: v.boolean(),
   })
     .index("by_legacy_id", ["legacyId"])
     .index("by_name", ["name"])
@@ -37,9 +43,31 @@ export default defineSchema({
     teamA: v.array(v.number()),
     teamB: v.array(v.number()),
     winner: winnerValidator,
+    seasonId: v.number(),
   })
     .index("by_legacy_id", ["legacyId"])
-    .index("by_date", ["date"]),
+    .index("by_date", ["date"])
+    .index("by_season_id", ["seasonId"]),
+
+  seasons: defineTable({
+    legacyId: v.number(),
+    name: v.string(),
+    slug: v.string(),
+    startDate: v.string(),
+    endDate: v.string(),
+    status: seasonStatusValidator,
+    closedAt: v.optional(v.number()),
+  })
+    .index("by_legacy_id", ["legacyId"])
+    .index("by_slug", ["slug"])
+    .index("by_status", ["status"])
+    .index("by_start_date", ["startDate"]),
+
+  roundups: defineTable({
+    seasonId: v.number(),
+    generatedAt: v.number(),
+    snapshot: v.any(),
+  }).index("by_season_id", ["seasonId"]),
 
   payments: defineTable({
     legacyId: v.number(),

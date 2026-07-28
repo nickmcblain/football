@@ -2,6 +2,8 @@ export type Position = "Attack" | "Midfield" | "Defense";
 
 export type Winner = "Team A" | "Team B" | "Draw" | "Not Played";
 
+export type SeasonStatus = "active" | "closed";
+
 export interface Player {
   id: number;
   name: string;
@@ -9,10 +11,12 @@ export interface Player {
   points: number;
   totalOwed: number;
   paid: boolean;
+  active: boolean;
 }
 
 export interface Match {
   id: number;
+  seasonId: number;
   date: string;
   time: string;
   price: number;
@@ -21,6 +25,18 @@ export interface Match {
   teamA: number[];
   teamB: number[];
   winner: Winner;
+}
+
+export interface Season {
+  id: number;
+  name: string;
+  slug: string;
+  startDate: string;
+  endDate: string;
+  status: SeasonStatus;
+  closedAt: number | null;
+  matchCount: number;
+  completedMatchCount: number;
 }
 
 export interface Payment {
@@ -39,6 +55,7 @@ export interface CreatePlayerInput {
 export interface UpdatePlayerInput {
   name?: string;
   position?: Position;
+  active?: boolean;
 }
 
 export interface CreateMatchInput {
@@ -81,6 +98,76 @@ export interface LeaderboardEntry {
   draws: number;
   losses: number;
   form: FormResult[];
+}
+
+export interface TeamRecord {
+  appearances: number;
+  wins: number;
+  draws: number;
+  losses: number;
+  winRate: number;
+}
+
+export interface PlayerAward {
+  playerId: number;
+  name: string;
+  value: number;
+}
+
+export interface DuoStats {
+  playerIds: [number, number];
+  names: [string, string];
+  matchesPlayed: number;
+  wins: number;
+  draws: number;
+  losses: number;
+  winRate: number;
+}
+
+export interface PersonalRoundup {
+  playerId: number;
+  name: string;
+  appearances: number;
+  attendanceRank: number;
+  points: number;
+  leaderboardRank: number;
+  avgPointsPerMatch: number;
+  wins: number;
+  draws: number;
+  losses: number;
+  winRate: number;
+  form: FormResult[];
+  light: TeamRecord;
+  dark: TeamRecord;
+  bestPartners: DuoStats[];
+  worstPartners: DuoStats[];
+}
+
+export interface SeasonRoundup {
+  season: Pick<Season, "id" | "name" | "slug" | "startDate" | "endDate" | "closedAt">;
+  generatedAt: number;
+  totals: {
+    matchesPlayed: number;
+    uniquePlayers: number;
+    totalAppearances: number;
+  };
+  leaderboard: LeaderboardEntry[];
+  champions: PlayerAward[];
+  podium: LeaderboardEntry[];
+  mostAppearances: PlayerAward[];
+  teamSplit: {
+    lightWins: number;
+    darkWins: number;
+    draws: number;
+    lightWinPercentage: number;
+    darkWinPercentage: number;
+    drawPercentage: number;
+  };
+  bestWinRate: PlayerAward[];
+  worstWinRate: PlayerAward[];
+  bestDuos: DuoStats[];
+  worstDuos: DuoStats[];
+  players: PersonalRoundup[];
 }
 
 export interface PaymentCell {

@@ -14,6 +14,8 @@ import type {
   LeaderboardEntry,
   PaymentMatrix,
   Position,
+  Season,
+  SeasonRoundup,
 } from "./types";
 
 const api = anyApi as any;
@@ -56,6 +58,7 @@ export async function updatePlayer(id: number, input: UpdatePlayerInput): Promis
     id,
     name: input.name,
     position: input.position,
+    active: input.active,
   })) as Player | null;
 }
 
@@ -64,9 +67,9 @@ export async function deletePlayer(id: number): Promise<boolean> {
   return (await client.mutation(api.data.deletePlayer, { id })) as boolean;
 }
 
-export async function getAllMatches(): Promise<Match[]> {
+export async function getAllMatches(seasonId?: number): Promise<Match[]> {
   const client = createClient();
-  return (await client.query(api.data.getAllMatches, {})) as Match[];
+  return (await client.query(api.data.getAllMatches, { seasonId })) as Match[];
 }
 
 export async function getMatchById(id: number): Promise<Match | null> {
@@ -142,9 +145,41 @@ export async function markAllPaymentsPaidForPlayer(playerId: number): Promise<vo
   await client.mutation(api.data.markAllPaymentsPaidForPlayer, { playerId });
 }
 
-export async function getLeaderboard(): Promise<LeaderboardEntry[]> {
+export async function getLeaderboard(season?: string): Promise<LeaderboardEntry[]> {
   const client = createClient();
-  return (await client.query(api.data.getLeaderboard, {})) as LeaderboardEntry[];
+  return (await client.query(api.data.getLeaderboard, { season })) as LeaderboardEntry[];
+}
+
+export async function getSeasons(): Promise<Season[]> {
+  const client = createClient();
+  return (await client.query(api.data.getSeasons, {})) as Season[];
+}
+
+export async function createSeason(input: {
+  name: string;
+  startDate: string;
+  endDate: string;
+}): Promise<Season> {
+  const client = createClient();
+  return (await client.mutation(api.data.createSeason, input)) as Season;
+}
+
+export async function updateSeason(
+  id: number,
+  input: Partial<Pick<Season, "name" | "startDate" | "endDate">>,
+): Promise<Season | null> {
+  const client = createClient();
+  return (await client.mutation(api.data.updateSeason, { id, ...input })) as Season | null;
+}
+
+export async function closeSeason(id: number): Promise<Season> {
+  const client = createClient();
+  return (await client.mutation(api.data.closeSeason, { id })) as Season;
+}
+
+export async function getRoundup(slug: string): Promise<SeasonRoundup | null> {
+  const client = createClient();
+  return (await client.query(api.data.getRoundup, { slug })) as SeasonRoundup | null;
 }
 
 export async function getPaymentMatrix(): Promise<PaymentMatrix> {

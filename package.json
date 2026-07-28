@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "bun test",
     "convex:dev": "convex dev",
     "convex:deploy": "convex deploy",
     "migrate:sqlite-to-convex": "node scripts/migrate-sqlite-to-convex.mjs"

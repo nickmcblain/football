@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 
-const SIDEBAR_HIDDEN_PATHS = ["/leaderboard", "/login"];
+const SIDEBAR_HIDDEN_PATHS = ["/leaderboard", "/wrapped", "/login"];
 
 function shouldHideSidebar(pathname: string) {
   return SIDEBAR_HIDDEN_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
@@ -12,11 +12,22 @@ function shouldHideSidebar(pathname: string) {
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const hideSidebar = shouldHideSidebar(pathname);
+  const isWrapped = pathname.startsWith("/wrapped");
 
   return (
     <>
       {!hideSidebar && <AppSidebar />}
-      <main className={hideSidebar ? "min-h-screen p-8" : "ml-64 min-h-screen p-8"}>{children}</main>
+      <main
+        className={
+          isWrapped
+            ? "min-h-screen bg-[#0e0d0a] p-3 sm:p-8"
+            : hideSidebar
+              ? "min-h-screen p-4 sm:p-8"
+              : "ml-64 min-h-screen p-8"
+        }
+      >
+        {children}
+      </main>
     </>
   );
 }

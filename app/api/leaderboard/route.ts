@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { getLeaderboard } from "@/lib/queries";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const leaderboard = await getLeaderboard();
+    const season = new URL(request.url).searchParams.get("season") ?? undefined;
+    const leaderboard = await getLeaderboard(season);
     return NextResponse.json(leaderboard);
   } catch (error) {
     return NextResponse.json(

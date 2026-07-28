@@ -55,6 +55,13 @@ export async function PUT(request: Request, { params }: Params) {
       input.position = body.position;
     }
 
+    if (body.active !== undefined) {
+      if (typeof body.active !== "boolean") {
+        return NextResponse.json({ error: "Active must be a boolean" }, { status: 400 });
+      }
+      input.active = body.active;
+    }
+
     const player = await updatePlayer(playerId, input);
     if (!player) {
       return NextResponse.json({ error: "Player not found" }, { status: 404 });

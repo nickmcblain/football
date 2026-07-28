@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { toast } from "sonner";
 import {
   IconPlus,
@@ -10,7 +10,7 @@ import {
   IconTrophy,
   IconEye,
 } from "@tabler/icons-react";
-import { Match, Player, Winner } from "@/lib/types";
+import { Match, Player, Season, Winner } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -55,6 +55,8 @@ const formatGBP = new Intl.NumberFormat("en-GB", {
 export default function MatchesPage() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [players, setPlayers] = useState<Player[]>([]);
+  const [seasons, setSeasons] = useState<Season[]>([]);
+  const [selectedSeasonId, setSelectedSeasonId] = useState("");
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [teamsDialogOpen, setTeamsDialogOpen] = useState(false);
@@ -78,9 +80,10 @@ export default function MatchesPage() {
   const [teamBInput, setTeamBInput] = useState("");
   const teamsDialogContentRef = useRef<HTMLDivElement>(null);
 
-  async function fetchMatches() {
+  const fetchMatches = useCallback(async function fetchMatches() {
     try {
-      const res = await fetch("/api/matches");
+      const query = selectedSeasonId ? `?seasonId=${selectedSeasonId}` : "";
+      const res = await fetch(`/api/matches${query}`);
       if (!res.ok) throw new Error("Failed to fetch matches");
       const data = await res.json();
       setMatches(data);
@@ -88,6 +91,20 @@ export default function MatchesPage() {
       toast.error("Failed to load matches");
     } finally {
       setLoading(false);
+    }
+  }, [selectedSeasonId]);
+
+  async function fetchSeasons() {
+    try {
+      const res = await fetch("/api/seasons");
+      if (!res.ok) throw new Error("Failed to fetch seasons");
+      const data: Season[] = await res.json();
+      setSeasons(data);
+      const preferred = data.find((season) => season.status === "active") ?? data[0];
+      if (preferred) setSelectedSeasonId((current) => current || preferred.id.toString());
+      else setLoading(false);
+    } catch {
+      toast.error("Failed to load seasons");
     }
   }
 
@@ -103,9 +120,13 @@ export default function MatchesPage() {
   }
 
   useEffect(() => {
-    fetchMatches();
+    fetchSeasons();
     fetchPlayers();
   }, []);
+
+  useEffect(() => {
+    if (selectedSeasonId) fetchMatches();
+  }, [selectedSeasonId, fetchMatches]);
 
   function openCreateDialog() {
     setEditingMatch(null);
@@ -310,10 +331,13 @@ export default function MatchesPage() {
 
   const availablePlayers = players.filter(
     (p) =>
+      p.active &&
       attendees.includes(p.id) &&
       !teamA.includes(p.id) &&
       !teamB.includes(p.id),
   );
+  const activePlayers = players.filter((player) => player.active);
+  const activeSeason = seasons.find((season) => season.status === "active");
 
   function getPlayerName(id: number) {
     return players.find((p) => p.id === id)?.name ?? `Player ${id}`;
@@ -328,12 +352,26 @@ export default function MatchesPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between gap-4 mb-6">
         <h1 className="text-2xl font-bold">Matches</h1>
-        <Button onClick={openCreateDialog}>
-          <IconPlus className="h-4 w-4 mr-2" />
-          Create Match
-        </Button>
+        <div className="flex items-center gap-3">
+          <Select value={selectedSeasonId} onValueChange={setSelectedSeasonId}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Choose season" />
+            </SelectTrigger>
+            <SelectContent>
+              {seasons.map((season) => (
+                <SelectItem key={season.id} value={season.id.toString()}>
+                  {season.name} · {season.status}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button onClick={openCreateDialog} disabled={!activeSeason}>
+            <IconPlus className="h-4 w-4 mr-2" />
+            Create Match
+          </Button>
+        </div>
       </div>
 
       <div className="border rounded-lg">
@@ -551,7 +589,7 @@ export default function MatchesPage() {
                 Who&apos;s Playing? ({attendees.length})
               </h3>
               <div className="flex flex-wrap gap-2">
-                {players.map((player) => {
+                {activePlayers.map((player) => {
                   const isSelected = attendees.includes(player.id);
                   return (
                     <button

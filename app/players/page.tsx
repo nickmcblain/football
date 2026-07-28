@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
-import { IconPlus, IconPencil, IconTrash } from "@tabler/icons-react"
+import { IconArchive, IconPlus, IconPencil, IconRestore } from "@tabler/icons-react"
 import { Player, Position } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import {
@@ -113,12 +113,27 @@ export default function PlayersPage() {
         method: "DELETE",
       })
       if (!res.ok) throw new Error("Failed to delete player")
-      toast.success("Player deleted")
+      toast.success("Player archived")
       setDeleteDialogOpen(false)
       setDeletingPlayer(null)
       fetchPlayers()
     } catch {
       toast.error("Failed to delete player")
+    }
+  }
+
+  async function handleRestore(player: Player) {
+    try {
+      const res = await fetch(`/api/players/${player.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ active: true }),
+      })
+      if (!res.ok) throw new Error("Failed to restore player")
+      toast.success(`${player.name} restored`)
+      fetchPlayers()
+    } catch {
+      toast.error("Failed to restore player")
     }
   }
 
@@ -141,19 +156,20 @@ export default function PlayersPage() {
               <TableHead className="text-right">Points</TableHead>
               <TableHead className="text-right">Total Owed</TableHead>
               <TableHead>Paid</TableHead>
+              <TableHead>Status</TableHead>
               <TableHead className="w-[100px]">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                   Loading...
                 </TableCell>
               </TableRow>
             ) : players.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                   No players yet. Add one to get started.
                 </TableCell>
               </TableRow>
@@ -172,6 +188,11 @@ export default function PlayersPage() {
                     </Badge>
                   </TableCell>
                   <TableCell>
+                    <Badge variant={player.active ? "default" : "secondary"}>
+                      {player.active ? "Active" : "Archived"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
                     <div className="flex gap-1">
                       <Button
                         variant="ghost"
@@ -180,13 +201,25 @@ export default function PlayersPage() {
                       >
                         <IconPencil className="h-4 w-4" />
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => openDeleteDialog(player)}
-                      >
-                        <IconTrash className="h-4 w-4" />
-                      </Button>
+                      {player.active ? (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => openDeleteDialog(player)}
+                          title="Archive"
+                        >
+                          <IconArchive className="h-4 w-4" />
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleRestore(player)}
+                          title="Restore"
+                        >
+                          <IconRestore className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -247,17 +280,18 @@ export default function PlayersPage() {
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Player</DialogTitle>
+            <DialogTitle>Archive Player</DialogTitle>
           </DialogHeader>
           <p className="py-4">
-            Are you sure you want to delete <strong>{deletingPlayer?.name}</strong>? This action cannot be undone.
+            Archive <strong>{deletingPlayer?.name}</strong>? Their history will stay in past
+            matches and leaderboards, but they will no longer be available for new teams.
           </p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
               Cancel
             </Button>
             <Button variant="destructive" onClick={handleDelete}>
-              Delete
+              Archive
             </Button>
           </DialogFooter>
         </DialogContent>

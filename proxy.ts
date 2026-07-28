@@ -1,8 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { AUTH_COOKIE_NAME, isAuthEnabled, isValidAuthToken } from "@/lib/auth";
 
-const PUBLIC_PATHS = ["/leaderboard", "/login"];
-const PUBLIC_API_PATHS = ["/api/leaderboard", "/api/auth/login"];
+const PUBLIC_PATHS = ["/leaderboard", "/wrapped", "/login"];
+const PUBLIC_API_PATHS = ["/api/leaderboard", "/api/public", "/api/auth/login"];
 
 function isStaticAsset(pathname: string) {
   return /\.[^/]+$/.test(pathname);
