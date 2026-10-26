@@ -133,11 +133,12 @@ export default function LeaderboardPage() {
       </div>
 
       <div className="mx-4 mt-4 overflow-hidden rounded-3xl bg-white">
-        <div className="grid grid-cols-[2.25rem_minmax(0,1fr)_1.75rem_1.75rem_2.25rem] items-center px-3 py-3 text-xs text-muted-foreground">
+        <div className={`grid ${TABLE_COLUMNS} items-center px-3 py-3 text-xs text-muted-foreground`}>
           <span>Post</span>
           <span>Player</span>
           <span className="text-center">P</span>
           <span className="text-center">W</span>
+          <span className="text-right">Win%</span>
           <span className="text-right">Pts</span>
         </div>
         {loading ? (
@@ -152,7 +153,7 @@ export default function LeaderboardPage() {
               key={entry.playerId}
               type="button"
               onClick={() => setPlayer(entry)}
-              className={`grid w-full grid-cols-[2.25rem_minmax(0,1fr)_1.75rem_1.75rem_2.25rem] items-center px-3 py-3 text-left ${
+              className={`grid w-full ${TABLE_COLUMNS} items-center px-3 py-3 text-left ${
                 index % 2 === 1 ? "bg-neutral-50" : "bg-white"
               }`}
             >
@@ -165,6 +166,7 @@ export default function LeaderboardPage() {
               </span>
               <span className="text-center text-sm">{entry.matchesPlayed}</span>
               <span className="text-center text-sm">{entry.wins}</span>
+              <span className="text-right text-sm">{entry.winRate}%</span>
               <span className="text-right text-sm font-semibold">{entry.points}</span>
             </button>
           ))
@@ -346,6 +348,8 @@ function formatDate(date: string | null) {
     month: "short",
   });
 }
+
+const TABLE_COLUMNS = "grid-cols-[2rem_minmax(0,1fr)_1.5rem_1.5rem_2.75rem_2.25rem]";
 
 function ordinal(rank: number) {
   const suffix = rank % 10 === 1 && rank % 100 !== 11
