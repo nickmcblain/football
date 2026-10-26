@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { toast } from "sonner";
 import type { FormResult, LeaderboardEntry, Season, UpcomingFixture } from "@/lib/types";
@@ -72,20 +71,13 @@ export default function LeaderboardPage() {
   const selectedSeasonRecord = seasons.find((season) => season.slug === selectedSeason);
 
   return (
-    <div className="mx-auto max-w-md">
-      <section className="relative h-64 overflow-hidden bg-neutral-900">
-        <Image src="/hero.jpg" alt="" fill priority sizes="448px" className="object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/10 to-black/30" />
-        <h1 className="absolute inset-x-0 top-8 text-center text-lg font-medium tracking-wide text-white">
-          Bombers FC
-        </h1>
-      </section>
-
+    <div className="mx-auto max-w-md pt-6">
+      <h1 className="mb-4 text-center text-lg font-medium tracking-tight">Bombers FC</h1>
       <button
         type="button"
         onClick={() => fixture && setTeamsOpen(true)}
         disabled={!fixture}
-        className="relative z-10 mx-4 -mt-16 block w-[calc(100%-2rem)] rounded-[28px] bg-white px-4 py-5 text-center shadow-[0_12px_40px_-24px_rgba(15,23,42,0.45)] disabled:cursor-default"
+        className="mx-4 block w-[calc(100%-2rem)] rounded-[28px] bg-white px-4 py-5 text-center shadow-[0_12px_40px_-24px_rgba(15,23,42,0.45)] disabled:cursor-default"
       >
         {fixture ? (
           <>
