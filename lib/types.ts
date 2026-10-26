@@ -102,6 +102,26 @@ export interface LeaderboardEntry {
   form: FormResult[];
 }
 
+export interface FixturePlayer {
+  id: number;
+  name: string;
+  position: Position;
+}
+
+export interface UpcomingFixture {
+  id: number;
+  date: string;
+  time: string;
+  location: string;
+  pitch: string;
+  winner: Winner;
+  scoreA: number | null;
+  scoreB: number | null;
+  seasonName: string;
+  teamA: FixturePlayer[];
+  teamB: FixturePlayer[];
+}
+
 export interface TeamRecord {
   appearances: number;
   wins: number;

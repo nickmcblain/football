@@ -78,7 +78,7 @@ export default function PaymentsPage() {
     return (
       <div>
         <div className="mb-6">
-          <h1 className="text-2xl font-bold">Payments</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Payments</h1>
           <p className="text-muted-foreground">Track player payments per match</p>
         </div>
         <div className="text-center py-8 text-muted-foreground">Loading...</div>
@@ -90,10 +90,10 @@ export default function PaymentsPage() {
     return (
       <div>
         <div className="mb-6">
-          <h1 className="text-2xl font-bold">Payments</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Payments</h1>
           <p className="text-muted-foreground">Track player payments per match</p>
         </div>
-        <div className="border rounded-lg p-8 text-center text-muted-foreground">
+        <div className="rounded-3xl bg-card p-8 text-center text-muted-foreground shadow-sm">
           No payment data yet. Create matches and assign players to see the payment matrix.
         </div>
       </div>
@@ -103,11 +103,53 @@ export default function PaymentsPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold">Payments</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Payments</h1>
         <p className="text-muted-foreground">Track player payments per match</p>
       </div>
 
-      <div className="border rounded-lg overflow-auto">
+      <div className="space-y-3 md:hidden">
+        {matrix.players.map((player) => {
+          const totalOwed = getPlayerTotal(player.id)
+          return (
+            <div key={player.id} className="rounded-3xl bg-card p-4 shadow-sm">
+              <div className="flex items-center justify-between gap-3">
+                <div className="font-medium">{player.name}</div>
+                <div className={totalOwed > 0 ? "font-semibold text-destructive" : "font-semibold text-green-700"}>
+                  {formatGBP(totalOwed)}
+                </div>
+              </div>
+              <div className="mt-2 divide-y divide-black/5">
+                {matrix.matches.map((match) => {
+                  const payment = getPayment(player.id, match.id)
+                  if (!payment) return null
+                  return (
+                    <label key={match.id} className="flex min-h-12 items-center justify-between gap-3">
+                      <span>
+                        <span className="block text-sm">{match.date}</span>
+                        <span className={cn("text-xs", payment.paid ? "text-muted-foreground line-through" : "text-muted-foreground")}>
+                          {formatGBP(payment.amountOwed)}
+                        </span>
+                      </span>
+                      <Checkbox
+                        checked={payment.paid}
+                        onCheckedChange={() => togglePayment(player.id, match.id, payment.paid)}
+                        aria-label={`${player.name} paid for ${match.date}`}
+                      />
+                    </label>
+                  )
+                })}
+              </div>
+              {totalOwed > 0 && (
+                <Button variant="outline" className="mt-3 w-full" onClick={() => markAllPaid(player.id)}>
+                  Mark all paid
+                </Button>
+              )}
+            </div>
+          )
+        })}
+      </div>
+
+      <div className="hidden overflow-auto rounded-3xl bg-card shadow-sm md:block">
         <Table>
           <TableHeader>
             <TableRow>

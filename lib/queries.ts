@@ -19,6 +19,7 @@ import type {
   Position,
   Season,
   SeasonRoundup,
+  UpcomingFixture,
 } from "./types";
 
 const api = anyApi as any;
@@ -157,6 +158,11 @@ export async function markAllPaymentsPaidForPlayer(playerId: number): Promise<vo
 export async function getLeaderboard(season?: string): Promise<LeaderboardEntry[]> {
   const client = createClient();
   return (await client.query(api.data.getLeaderboard, { season })) as LeaderboardEntry[];
+}
+
+export async function getUpcomingFixture(): Promise<UpcomingFixture | null> {
+  const client = createClient();
+  return (await client.query(api.data.getUpcomingFixture, {})) as UpcomingFixture | null;
 }
 
 export async function getSeasons(): Promise<Season[]> {

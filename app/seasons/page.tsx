@@ -119,26 +119,22 @@ export default function SeasonsPage() {
   const activeSeason = seasons.find((season) => season.status === "active");
 
   return (
-    <div className="mx-auto max-w-6xl space-y-8">
-      <div className="flex items-end justify-between gap-4">
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.24em] text-primary">
-            Competition control
-          </p>
-          <h1 className="text-3xl font-black tracking-tight">Seasons</h1>
-          <p className="mt-2 max-w-xl text-sm text-muted-foreground">
-            Every fixture rolls into one active campaign. Close it when every result is in to
-            publish the end-of-season story.
+          <h1 className="text-2xl font-semibold tracking-tight">Seasons</h1>
+          <p className="mt-1 max-w-xl text-sm text-muted-foreground">
+            One active season at a time. Close it when the results are in.
           </p>
         </div>
-        <Button onClick={openCreate} disabled={Boolean(activeSeason)}>
+        <Button className="w-full sm:w-auto" onClick={openCreate} disabled={Boolean(activeSeason)}>
           <IconCalendarPlus className="mr-2 size-4" />
           New season
         </Button>
       </div>
 
       {loading ? (
-        <div className="rounded-lg border p-10 text-center text-muted-foreground">Loading…</div>
+        <div className="rounded-3xl bg-card p-10 text-center text-muted-foreground shadow-sm">Loading…</div>
       ) : seasons.length === 0 ? (
         <Card className="border-dashed py-12 text-center">
           <CardContent>
@@ -192,13 +188,14 @@ export default function SeasonsPage() {
                   </div>
 
                   {season.status === "active" ? (
-                    <div className="flex items-center justify-between gap-4 border-t pt-4">
+                    <div className="flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
                       <p className="text-muted-foreground">
                         {unfinished > 0
                           ? `${unfinished} result${unfinished === 1 ? "" : "s"} still to resolve`
                           : "Ready to close and publish"}
                       </p>
                       <Button
+                        className="w-full sm:w-auto"
                         variant="outline"
                         onClick={() => setClosingSeason(season)}
                         disabled={unfinished > 0}
@@ -208,14 +205,14 @@ export default function SeasonsPage() {
                       </Button>
                     </div>
                   ) : (
-                    <div className="flex items-center justify-between gap-4 border-t pt-4">
+                    <div className="flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
                       <p className="text-muted-foreground">
                         Published{" "}
                         {season.closedAt
                           ? new Date(season.closedAt).toLocaleDateString("en-GB")
                           : ""}
                       </p>
-                      <Button variant="outline" asChild>
+                      <Button className="w-full sm:w-auto" variant="outline" asChild>
                         <Link href={`/wrapped/${season.slug}`} target="_blank">
                           View Wrapped
                           <IconExternalLink className="ml-2 size-4" />
@@ -246,7 +243,7 @@ export default function SeasonsPage() {
                 required
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-4">
               <div className="space-y-2">
                 <Label htmlFor="season-start">Starts</Label>
                 <Input

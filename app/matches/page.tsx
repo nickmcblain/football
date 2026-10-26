@@ -413,7 +413,7 @@ export default function MatchesPage() {
   return (
     <div>
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold">Matches</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Matches</h1>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <Select value={selectedSeasonId} onValueChange={setSelectedSeasonId}>
             <SelectTrigger className="w-full sm:w-[180px]">
@@ -427,7 +427,7 @@ export default function MatchesPage() {
               ))}
             </SelectContent>
           </Select>
-          <Button className="h-10 sm:h-8" onClick={openCreateDialog} disabled={!activeSeason}>
+          <Button onClick={openCreateDialog} disabled={!activeSeason}>
             <IconPlus className="h-4 w-4 mr-2" />
             Create Match
           </Button>
@@ -436,16 +436,16 @@ export default function MatchesPage() {
 
       <div className="space-y-3 md:hidden">
         {loading ? (
-          <div className="rounded-lg border py-8 text-center text-muted-foreground">Loading...</div>
+          <div className="rounded-3xl bg-card py-8 text-center text-muted-foreground shadow-sm">Loading...</div>
         ) : matches.length === 0 ? (
-          <div className="rounded-lg border px-4 py-8 text-center text-muted-foreground">
+          <div className="rounded-3xl bg-card px-4 py-8 text-center text-muted-foreground shadow-sm">
             No matches yet. Create one to get started.
           </div>
         ) : (
           matches.map((match) => {
             const canRecord = match.teamA.length + match.teamB.length > 0;
             return (
-              <div key={match.id} className="space-y-3 rounded-lg border p-4">
+              <div key={match.id} className="space-y-3 rounded-3xl bg-card p-4 shadow-sm">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <div className="font-medium">{match.date}</div>
@@ -466,7 +466,7 @@ export default function MatchesPage() {
                 >
                   {canRecord ? formatResult(match) : "Assign teams first"}
                 </Button>
-                <div className="grid grid-cols-4 gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   <Button variant="outline" className="h-11" onClick={() => openViewTeamsDialog(match)}>
                     View
                   </Button>
@@ -486,7 +486,7 @@ export default function MatchesPage() {
         )}
       </div>
 
-      <div className="hidden overflow-x-auto rounded-lg border md:block">
+      <div className="hidden overflow-x-auto rounded-3xl bg-card shadow-sm md:block">
         <Table>
           <TableHeader>
             <TableRow>

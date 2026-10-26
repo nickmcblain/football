@@ -140,14 +140,55 @@ export default function PlayersPage() {
   return (
     <div>
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold">Players</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Players</h1>
         <Button onClick={openCreateDialog}>
           <IconPlus className="h-4 w-4 mr-2" />
           Add Player
         </Button>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border">
+      <div className="space-y-3 md:hidden">
+        {loading ? (
+          <div className="rounded-3xl bg-card py-8 text-center text-muted-foreground shadow-sm">Loading...</div>
+        ) : players.length === 0 ? (
+          <div className="rounded-3xl bg-card px-4 py-8 text-center text-muted-foreground shadow-sm">
+            No players yet. Add one to get started.
+          </div>
+        ) : (
+          players.map((player) => (
+            <div key={player.id} className="rounded-3xl bg-card p-4 shadow-sm">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="font-medium">{player.name}</div>
+                  <div className="mt-1 text-sm text-muted-foreground">
+                    {player.position} · {formatGBP(player.totalOwed)} owed
+                  </div>
+                </div>
+                <div className="text-right text-sm">
+                  <div className="font-semibold">{player.points} pts</div>
+                  <div className="text-muted-foreground">{player.active ? "Active" : "Archived"}</div>
+                </div>
+              </div>
+              <div className="mt-3 flex gap-2">
+                <Button variant="outline" className="flex-1" onClick={() => openEditDialog(player)}>
+                  Edit
+                </Button>
+                {player.active ? (
+                  <Button variant="outline" className="flex-1" onClick={() => openDeleteDialog(player)}>
+                    Archive
+                  </Button>
+                ) : (
+                  <Button variant="outline" className="flex-1" onClick={() => handleRestore(player)}>
+                    Restore
+                  </Button>
+                )}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      <div className="hidden overflow-x-auto rounded-3xl bg-card shadow-sm md:block">
         <Table>
           <TableHeader>
             <TableRow>

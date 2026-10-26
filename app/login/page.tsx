@@ -14,8 +14,8 @@ function LoginContent() {
 
   const nextPath = useMemo(() => {
     const requestedPath = searchParams.get("next");
-    if (!requestedPath) return "/players";
-    if (!requestedPath.startsWith("/") || requestedPath.startsWith("//")) return "/players";
+    if (!requestedPath) return "/leaderboard";
+    if (!requestedPath.startsWith("/") || requestedPath.startsWith("//")) return "/leaderboard";
     return requestedPath;
   }, [searchParams]);
 
@@ -48,8 +48,8 @@ function LoginContent() {
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-md items-center px-6">
-      <div className="w-full rounded-lg border bg-card p-6 shadow-sm">
-        <h1 className="text-xl font-bold">Bombers FC</h1>
+      <div className="w-full rounded-3xl bg-card p-6 shadow-sm">
+        <h1 className="text-2xl font-semibold tracking-tight">Bombers FC</h1>
         <p className="mt-2 text-sm text-muted-foreground">
           Enter the site password to continue.
         </p>
