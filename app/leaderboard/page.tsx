@@ -1,33 +1,25 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
-import { IconArrowUpRight, IconBallFootball, IconSparkles } from "@tabler/icons-react";
 import { toast } from "sonner";
-import type { FormResult, LeaderboardEntry, Season } from "@/lib/types";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import type { FormResult, LeaderboardEntry, Season, UpcomingFixture } from "@/lib/types";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export default function LeaderboardPage() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [seasons, setSeasons] = useState<Season[]>([]);
   const [selectedSeason, setSelectedSeason] = useState("");
+  const [fixture, setFixture] = useState<UpcomingFixture | null>(null);
   const [loading, setLoading] = useState(true);
+  const [teamsOpen, setTeamsOpen] = useState(false);
+  const [player, setPlayer] = useState<LeaderboardEntry | null>(null);
 
   useEffect(() => {
     async function loadSeasons() {
@@ -43,6 +35,19 @@ export default function LeaderboardPage() {
       }
     }
     loadSeasons();
+  }, []);
+
+  useEffect(() => {
+    async function loadFixture() {
+      try {
+        const response = await fetch("/api/public/upcoming");
+        if (!response.ok) throw new Error("Failed to fetch the upcoming game");
+        setFixture(await response.json());
+      } catch {
+        setFixture(null);
+      }
+    }
+    loadFixture();
   }, []);
 
   useEffect(() => {
@@ -67,172 +72,279 @@ export default function LeaderboardPage() {
   const selectedSeasonRecord = seasons.find((season) => season.slug === selectedSeason);
 
   return (
-    <div className="mx-auto max-w-7xl">
-      <header className="mb-8 border-b pb-7">
-        <div className="mb-6 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <span className="grid size-10 place-items-center rounded-full bg-primary text-primary-foreground">
-              <IconBallFootball className="size-5" />
-            </span>
-            <div>
-              <div className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">
-                Bombers FC
-              </div>
-              <h1 className="text-3xl font-black tracking-tight sm:text-4xl">Leaderboard</h1>
+    <div className="mx-auto max-w-md">
+      <section className="relative h-64 overflow-hidden bg-neutral-900">
+        <Image src="/hero.jpg" alt="" fill priority sizes="448px" className="object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/10 to-black/30" />
+        <h1 className="absolute inset-x-0 top-8 text-center text-lg font-medium tracking-wide text-white">
+          Bombers FC
+        </h1>
+      </section>
+
+      <button
+        type="button"
+        onClick={() => fixture && setTeamsOpen(true)}
+        disabled={!fixture}
+        className="relative z-10 mx-4 -mt-16 block w-[calc(100%-2rem)] rounded-[28px] bg-white px-4 py-5 text-center shadow-[0_12px_40px_-24px_rgba(15,23,42,0.45)] disabled:cursor-default"
+      >
+        {fixture ? (
+          <>
+            <div className="text-base font-semibold">{fixture.seasonName}</div>
+            <div className="mt-1 text-sm text-muted-foreground">
+              {formatKickoff(fixture.date, fixture.time)}
             </div>
-          </div>
-          {selectedSeasonRecord?.status === "closed" && (
-            <Button asChild className="hidden sm:inline-flex">
-              <Link href={`/wrapped/${selectedSeasonRecord.slug}`}>
-                <IconSparkles className="mr-2 size-4" />
-                Season Wrapped
-              </Link>
-            </Button>
-          )}
-        </div>
+            <div className="mt-4 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+              <SideMark label="Light" tone="light" />
+              <div>
+                {fixture.winner === "Not Played" || fixture.scoreA === null || fixture.scoreB === null ? (
+                  <div className="text-3xl font-semibold tracking-tight">VS</div>
+                ) : (
+                  <div className="text-3xl font-semibold tracking-[0.14em]">
+                    {padScore(fixture.scoreA)} - {padScore(fixture.scoreB)}
+                  </div>
+                )}
+                <div className="mt-1 text-xs text-muted-foreground">
+                  {fixture.teamA.length || fixture.teamB.length
+                    ? `${fixture.teamA.length} : ${fixture.teamB.length}`
+                    : "Teams not picked"}
+                </div>
+              </div>
+              <SideMark label="Dark" tone="dark" />
+            </div>
+            <div className="mt-4 text-sm text-muted-foreground">
+              {[fixture.location, fixture.pitch].filter(Boolean).join(" · ") || "Tap for teams"}
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="text-base font-semibold">No upcoming game</div>
+            <div className="mt-1 text-sm text-muted-foreground">
+              The next fixture will show here once it is scheduled.
+            </div>
+          </>
+        )}
+      </button>
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="max-w-xl text-sm text-muted-foreground">
-              Three for a win, two for a draw, one for showing up. Form runs oldest to newest.
-            </p>
-          </div>
-          <Select value={selectedSeason} onValueChange={setSelectedSeason}>
-            <SelectTrigger className="w-full sm:w-[220px]">
-              <SelectValue placeholder="Choose leaderboard" />
-            </SelectTrigger>
-            <SelectContent>
-              {seasons.map((season) => (
-                <SelectItem key={season.id} value={season.slug}>
-                  {season.name} · {season.status}
-                </SelectItem>
-              ))}
-              <SelectItem value="all-time">All Time</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </header>
-
-      {selectedSeasonRecord?.status === "closed" && (
-        <Button asChild className="mb-5 w-full sm:hidden">
-          <Link href={`/wrapped/${selectedSeasonRecord.slug}`}>
-            <IconSparkles className="mr-2 size-4" />
-            Open {selectedSeasonRecord.name} Wrapped
-          </Link>
-        </Button>
-      )}
-
-      <div className="overflow-x-auto rounded-xl border bg-card shadow-[0_18px_60px_-40px_rgba(61,37,16,0.5)]">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-muted/50">
-              <TableHead className="w-[74px]">Rank</TableHead>
-              <TableHead>Player</TableHead>
-              <TableHead className="text-center">Played</TableHead>
-              <TableHead className="text-center">Points</TableHead>
-              <TableHead className="hidden text-center md:table-cell">PPM</TableHead>
-              <TableHead className="hidden text-center lg:table-cell">Last played</TableHead>
-              <TableHead className="text-center">Win rate</TableHead>
-              <TableHead className="hidden text-center sm:table-cell">W / D / L</TableHead>
-              <TableHead className="hidden text-center xl:table-cell">Form</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={9} className="py-14 text-center text-muted-foreground">
-                  Loading the table…
-                </TableCell>
-              </TableRow>
-            ) : leaderboard.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={9} className="py-14 text-center text-muted-foreground">
-                  No completed matches in this season yet.
-                </TableCell>
-              </TableRow>
-            ) : (
-              leaderboard.map((entry) => (
-                <TableRow key={entry.playerId} className={entry.rank <= 3 ? "bg-primary/[0.035]" : ""}>
-                  <TableCell>
-                    <RankBadge rank={entry.rank} />
-                  </TableCell>
-                  <TableCell>
-                    <div className="font-bold">{entry.name}</div>
-                    <div className="mt-1 text-xs text-muted-foreground sm:hidden">
-                      {entry.wins}W · {entry.draws}D · {entry.losses}L
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-center">{entry.matchesPlayed}</TableCell>
-                  <TableCell className="text-center text-base font-black">{entry.points}</TableCell>
-                  <TableCell className="hidden text-center md:table-cell">
-                    {entry.avgPointsPerMatch.toFixed(1)}
-                  </TableCell>
-                  <TableCell className="hidden text-center lg:table-cell">
-                    {formatDate(entry.lastPlayedDate)}
-                  </TableCell>
-                  <TableCell className="text-center font-bold">{entry.winRate}%</TableCell>
-                  <TableCell className="hidden text-center sm:table-cell">
-                    <span className="text-emerald-700">{entry.wins}</span>
-                    {" / "}
-                    <span className="text-muted-foreground">{entry.draws}</span>
-                    {" / "}
-                    <span className="text-red-700">{entry.losses}</span>
-                  </TableCell>
-                  <TableCell className="hidden xl:table-cell">
-                    <div className="flex justify-center gap-1">
-                      {entry.form.length === 0
-                        ? "—"
-                        : entry.form.map((result, index) => (
-                            <FormBadge key={`${entry.playerId}-${index}`} result={result} />
-                          ))}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+      <div className="mt-5 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
+        {seasons.map((season) => (
+          <SeasonPill
+            key={season.id}
+            active={selectedSeason === season.slug}
+            onClick={() => setSelectedSeason(season.slug)}
+          >
+            {season.name}
+          </SeasonPill>
+        ))}
+        <SeasonPill active={selectedSeason === "all-time"} onClick={() => setSelectedSeason("all-time")}>
+          All time
+        </SeasonPill>
       </div>
 
-      <footer className="mt-6 flex items-center justify-between text-xs text-muted-foreground">
-        <span>{leaderboard.length} players ranked</span>
+      <div className="mx-4 mt-4 overflow-hidden rounded-3xl bg-white">
+        <div className="grid grid-cols-[2.25rem_minmax(0,1fr)_1.75rem_1.75rem_2.25rem] items-center px-3 py-3 text-xs text-muted-foreground">
+          <span>Post</span>
+          <span>Player</span>
+          <span className="text-center">P</span>
+          <span className="text-center">W</span>
+          <span className="text-right">Pts</span>
+        </div>
+        {loading ? (
+          <div className="px-3 py-10 text-center text-sm text-muted-foreground">Loading the table…</div>
+        ) : leaderboard.length === 0 ? (
+          <div className="px-3 py-10 text-center text-sm text-muted-foreground">
+            No completed matches in this season yet.
+          </div>
+        ) : (
+          leaderboard.map((entry, index) => (
+            <button
+              key={entry.playerId}
+              type="button"
+              onClick={() => setPlayer(entry)}
+              className={`grid w-full grid-cols-[2.25rem_minmax(0,1fr)_1.75rem_1.75rem_2.25rem] items-center px-3 py-3 text-left ${
+                index % 2 === 1 ? "bg-neutral-50" : "bg-white"
+              }`}
+            >
+              <span className="text-sm text-muted-foreground">{entry.rank}</span>
+              <span className="flex min-w-0 items-center gap-2">
+                <span className="grid size-7 shrink-0 place-items-center rounded-full bg-neutral-100 text-xs font-medium">
+                  {entry.name.slice(0, 1).toUpperCase()}
+                </span>
+                <span className="truncate text-sm font-medium">{entry.name}</span>
+              </span>
+              <span className="text-center text-sm">{entry.matchesPlayed}</span>
+              <span className="text-center text-sm">{entry.wins}</span>
+              <span className="text-right text-sm font-semibold">{entry.points}</span>
+            </button>
+          ))
+        )}
+      </div>
+
+      <div className="mt-4 flex items-center justify-between px-5 pb-2 text-xs text-muted-foreground">
+        <span>{leaderboard.length} players</span>
         {selectedSeasonRecord?.status === "closed" && (
-          <Link
-            href={`/wrapped/${selectedSeasonRecord.slug}`}
-            className="flex items-center gap-1 font-semibold text-foreground hover:text-primary"
-          >
-            Relive the season <IconArrowUpRight className="size-3" />
+          <Link href={`/wrapped/${selectedSeasonRecord.slug}`} className="font-medium text-foreground">
+            Season wrapped
           </Link>
         )}
-      </footer>
+      </div>
+
+      <Dialog open={teamsOpen} onOpenChange={setTeamsOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {fixture ? formatKickoff(fixture.date, fixture.time) : "Teams"}
+            </DialogTitle>
+          </DialogHeader>
+          {fixture && fixture.teamA.length + fixture.teamB.length === 0 ? (
+            <p className="text-muted-foreground">Teams have not been picked yet.</p>
+          ) : (
+            <div className="grid grid-cols-2 gap-4">
+              <Lineup title="Light" players={fixture?.teamA ?? []} />
+              <Lineup title="Dark" players={fixture?.teamB ?? []} />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={player !== null} onOpenChange={(open) => !open && setPlayer(null)}>
+        <DialogContent>
+          {player && (
+            <>
+              <DialogHeader>
+                <DialogTitle>{player.name}</DialogTitle>
+              </DialogHeader>
+              <p className="text-sm text-muted-foreground">
+                {ordinal(player.rank)} · {player.winRate}% win rate
+              </p>
+              <div className="grid grid-cols-3 gap-2">
+                <Stat label="Points" value={String(player.points)} />
+                <Stat label="Played" value={String(player.matchesPlayed)} />
+                <Stat label="Per game" value={player.avgPointsPerMatch.toFixed(1)} />
+                <Stat label="Wins" value={String(player.wins)} />
+                <Stat label="Draws" value={String(player.draws)} />
+                <Stat label="Losses" value={String(player.losses)} />
+              </div>
+              <div>
+                <div className="mb-2 text-xs text-muted-foreground">Form, oldest to newest</div>
+                <div className="flex gap-1.5">
+                  {player.form.length === 0
+                    ? <span className="text-sm text-muted-foreground">No games yet</span>
+                    : player.form.map((result, index) => (
+                        <FormMark key={`${player.playerId}-${index}`} result={result} />
+                      ))}
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Last played {formatDate(player.lastPlayedDate)}
+              </p>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
 
-function RankBadge({ rank }: { rank: number }) {
-  const className =
-    rank === 1
-      ? "bg-amber-400 text-amber-950"
-      : rank === 2
-        ? "bg-stone-300 text-stone-900"
-        : rank === 3
-          ? "bg-amber-800 text-white"
-          : "";
-  return <Badge className={className}>{rank <= 3 ? ["1st", "2nd", "3rd"][rank - 1] : rank}</Badge>;
+function SeasonPill({
+  active,
+  children,
+  onClick,
+}: {
+  active: boolean;
+  children: React.ReactNode;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`h-10 shrink-0 rounded-full px-4 text-sm ${
+        active ? "bg-neutral-900 text-white" : "bg-white text-muted-foreground"
+      }`}
+    >
+      {children}
+    </button>
+  );
 }
 
-function FormBadge({ result }: { result: FormResult }) {
-  const className =
-    result === "W"
-      ? "bg-emerald-600"
-      : result === "D"
-        ? "bg-stone-400"
-        : "bg-red-600";
+function SideMark({ label, tone }: { label: string; tone: "light" | "dark" }) {
   return (
-    <span className={`grid size-6 place-items-center rounded text-[10px] font-bold text-white ${className}`}>
+    <div className="flex flex-col items-center gap-2">
+      <span
+        className={`grid size-14 place-items-center rounded-full text-sm font-semibold ${
+          tone === "light" ? "border border-black/10 bg-white" : "bg-neutral-900 text-white"
+        }`}
+      >
+        {label.slice(0, 1)}
+      </span>
+      <span className="text-sm">{label}</span>
+    </div>
+  );
+}
+
+function Lineup({
+  title,
+  players,
+}: {
+  title: string;
+  players: UpcomingFixture["teamA"];
+}) {
+  const order = { Attack: 0, Midfield: 1, Defense: 2 };
+  const sorted = [...players].sort(
+    (a, b) => order[a.position] - order[b.position] || a.name.localeCompare(b.name),
+  );
+  return (
+    <div>
+      <div className="mb-2 text-sm font-medium">{title}</div>
+      {sorted.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Nobody yet</p>
+      ) : (
+        <ul className="space-y-2">
+          {sorted.map((person) => (
+            <li key={person.id}>
+              <div className="text-sm">{person.name}</div>
+              <div className="text-xs text-muted-foreground">{person.position}</div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl bg-neutral-50 px-3 py-3">
+      <div className="text-lg font-semibold">{value}</div>
+      <div className="text-xs text-muted-foreground">{label}</div>
+    </div>
+  );
+}
+
+function FormMark({ result }: { result: FormResult }) {
+  const className =
+    result === "W" ? "bg-neutral-900 text-white" : result === "D" ? "bg-neutral-200 text-neutral-700" : "bg-red-100 text-red-700";
+  return (
+    <span className={`grid size-8 place-items-center rounded-full text-xs font-semibold ${className}`}>
       {result}
     </span>
   );
+}
+
+function padScore(score: number) {
+  return String(score).padStart(2, "0");
+}
+
+function formatKickoff(date: string, time: string) {
+  const parsed = new Date(`${date}T${time.length === 5 ? time : "00:00"}`);
+  if (Number.isNaN(parsed.getTime())) return `${date} ${time}`;
+  return parsed.toLocaleString("en-GB", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    hour: "numeric",
+    minute: "2-digit",
+  });
 }
 
 function formatDate(date: string | null) {
@@ -241,4 +353,15 @@ function formatDate(date: string | null) {
     day: "numeric",
     month: "short",
   });
+}
+
+function ordinal(rank: number) {
+  const suffix = rank % 10 === 1 && rank % 100 !== 11
+    ? "st"
+    : rank % 10 === 2 && rank % 100 !== 12
+      ? "nd"
+      : rank % 10 === 3 && rank % 100 !== 13
+        ? "rd"
+        : "th";
+  return `${rank}${suffix}`;
 }
