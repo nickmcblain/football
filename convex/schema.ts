@@ -43,6 +43,8 @@ export default defineSchema({
     teamA: v.array(v.number()),
     teamB: v.array(v.number()),
     winner: winnerValidator,
+    scoreA: v.optional(v.number()),
+    scoreB: v.optional(v.number()),
     seasonId: v.number(),
   })
     .index("by_legacy_id", ["legacyId"])

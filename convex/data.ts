@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { normalizeResult } from "../lib/results";
 import { buildSeasonRoundup, calculateLeaderboard } from "../lib/statistics";
 import type { SeasonRoundup } from "../lib/types";
 
@@ -52,6 +53,8 @@ interface MatchRecord {
   teamA: number[];
   teamB: number[];
   winner: Winner;
+  scoreA: number | null;
+  scoreB: number | null;
 }
 
 interface SeasonRecord {
@@ -118,6 +121,8 @@ interface MatchDoc {
   teamA: number[];
   teamB: number[];
   winner: Winner;
+  scoreA?: number;
+  scoreB?: number;
   seasonId?: number;
 }
 
@@ -162,6 +167,8 @@ const matchRecordValidator = v.object({
   teamA: v.array(v.number()),
   teamB: v.array(v.number()),
   winner: winnerValidator,
+  scoreA: v.union(v.number(), v.null()),
+  scoreB: v.union(v.number(), v.null()),
 });
 
 const paymentRecordValidator = v.object({
@@ -223,6 +230,8 @@ function toMatchRecord(doc: MatchDoc): MatchRecord {
     teamA: doc.teamA,
     teamB: doc.teamB,
     winner: doc.winner,
+    scoreA: doc.scoreA ?? null,
+    scoreB: doc.scoreB ?? null,
   };
 }
 
@@ -816,6 +825,8 @@ export const setMatchWinner = mutation({
   args: {
     matchId: v.number(),
     winner: winnerValidator,
+    scoreA: v.optional(v.union(v.number(), v.null())),
+    scoreB: v.optional(v.union(v.number(), v.null())),
   },
   returns: v.union(matchRecordValidator, v.null()),
   handler: async (ctx, args): Promise<MatchRecord | null> => {
@@ -824,25 +835,37 @@ export const setMatchWinner = mutation({
       return null;
     }
 
+    const result = normalizeResult({
+      winner: args.winner,
+      scoreA: args.scoreA === undefined ? (matchDoc.scoreA ?? null) : args.scoreA,
+      scoreB: args.scoreB === undefined ? (matchDoc.scoreB ?? null) : args.scoreB,
+    });
+
     const hasTeams = matchDoc.teamA.length > 0 || matchDoc.teamB.length > 0;
-    if (!hasTeams && args.winner !== "Not Played") {
+    if (!hasTeams && result.winner !== "Not Played") {
       throw new Error("Cannot set winner without teams assigned");
     }
     const season = matchDoc.seasonId === undefined
       ? null
       : await getSeasonDocByLegacyId(ctx, matchDoc.seasonId);
-    if (season?.status === "closed" && args.winner === "Not Played") {
+    if (season?.status === "closed" && result.winner === "Not Played") {
       throw new Error("Closed-season matches must remain completed");
     }
 
     const updatedMatch: MatchDoc = {
       ...matchDoc,
-      winner: args.winner,
+      winner: result.winner,
+      scoreA: result.scoreA ?? undefined,
+      scoreB: result.scoreB ?? undefined,
     };
 
-    await ctx.db.patch(matchDoc._id, { winner: args.winner });
+    await ctx.db.patch(matchDoc._id, {
+      winner: result.winner,
+      scoreA: result.scoreA ?? undefined,
+      scoreB: result.scoreB ?? undefined,
+    });
 
-    if (args.winner === "Not Played") {
+    if (result.winner === "Not Played") {
       await deletePaymentsForMatch(ctx, args.matchId);
     } else {
       await recalculateMatchPayments(ctx, updatedMatch);

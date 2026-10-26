@@ -12,6 +12,8 @@ import {
   IconEye,
 } from "@tabler/icons-react";
 import { Match, Player, Season, Winner } from "@/lib/types";
+import { formatResult, normalizeResult } from "@/lib/results";
+import { RecordResultDialog } from "@/components/matches/record-result-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -46,8 +48,6 @@ import {
   ComboboxEmpty,
 } from "@/components/ui/combobox";
 import { IconX } from "@tabler/icons-react";
-
-const winnerOptions: Winner[] = ["Team A", "Team B", "Draw", "Not Played"];
 
 type BalanceSummary = {
   teamAWinRate: number;
@@ -90,6 +90,7 @@ export default function MatchesPage() {
   const [teamAInput, setTeamAInput] = useState("");
   const [teamBInput, setTeamBInput] = useState("");
   const [balanceSummary, setBalanceSummary] = useState<BalanceSummary | null>(null);
+  const [resultMatch, setResultMatch] = useState<Match | null>(null);
   const teamsDialogContentRef = useRef<HTMLDivElement>(null);
 
   const fetchMatches = useCallback(async function fetchMatches() {
@@ -117,6 +118,7 @@ export default function MatchesPage() {
       else setLoading(false);
     } catch {
       toast.error("Failed to load seasons");
+      setLoading(false);
     }
   }
 
@@ -295,18 +297,27 @@ export default function MatchesPage() {
     }
   }
 
-  async function handleSetWinner(matchId: number, winner: Winner) {
+  async function handleSaveResult(
+    matchId: number,
+    result: { winner: Winner; scoreA: number | null; scoreB: number | null },
+  ) {
     try {
+      const normalized = normalizeResult(result);
       const res = await fetch(`/api/matches/${matchId}/winner`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ winner }),
+        body: JSON.stringify(normalized),
       });
-      if (!res.ok) throw new Error("Failed to set winner");
-      toast.success("Winner set");
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "Failed to save result");
+        return;
+      }
+      toast.success(normalized.winner === "Not Played" ? "Result cleared" : "Result saved");
+      setResultMatch(null);
       fetchMatches();
-    } catch {
-      toast.error("Failed to set winner");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to save result");
     }
   }
 
@@ -401,11 +412,11 @@ export default function MatchesPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between gap-4 mb-6">
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold">Matches</h1>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <Select value={selectedSeasonId} onValueChange={setSelectedSeasonId}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-full sm:w-[180px]">
               <SelectValue placeholder="Choose season" />
             </SelectTrigger>
             <SelectContent>
@@ -416,14 +427,66 @@ export default function MatchesPage() {
               ))}
             </SelectContent>
           </Select>
-          <Button onClick={openCreateDialog} disabled={!activeSeason}>
+          <Button className="h-10 sm:h-8" onClick={openCreateDialog} disabled={!activeSeason}>
             <IconPlus className="h-4 w-4 mr-2" />
             Create Match
           </Button>
         </div>
       </div>
 
-      <div className="border rounded-lg">
+      <div className="space-y-3 md:hidden">
+        {loading ? (
+          <div className="rounded-lg border py-8 text-center text-muted-foreground">Loading...</div>
+        ) : matches.length === 0 ? (
+          <div className="rounded-lg border px-4 py-8 text-center text-muted-foreground">
+            No matches yet. Create one to get started.
+          </div>
+        ) : (
+          matches.map((match) => {
+            const canRecord = match.teamA.length + match.teamB.length > 0;
+            return (
+              <div key={match.id} className="space-y-3 rounded-lg border p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="font-medium">{match.date}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {match.time}
+                      {match.location ? ` · ${match.location}` : ""}
+                      {match.pitch ? ` · ${match.pitch}` : ""}
+                    </div>
+                  </div>
+                  <div className="text-sm">{formatGBP(match.price)}</div>
+                </div>
+                <div className="text-sm text-muted-foreground">{formatTeams(match)}</div>
+                <Button
+                  variant="outline"
+                  className="h-12 w-full text-sm"
+                  disabled={!canRecord}
+                  onClick={() => setResultMatch(match)}
+                >
+                  {canRecord ? formatResult(match) : "Assign teams first"}
+                </Button>
+                <div className="grid grid-cols-4 gap-2">
+                  <Button variant="outline" className="h-11" onClick={() => openViewTeamsDialog(match)}>
+                    View
+                  </Button>
+                  <Button variant="outline" className="h-11" onClick={() => openTeamsDialog(match)}>
+                    Teams
+                  </Button>
+                  <Button variant="outline" className="h-11" onClick={() => openEditDialog(match)}>
+                    Edit
+                  </Button>
+                  <Button variant="outline" className="h-11" onClick={() => openDeleteDialog(match)}>
+                    Delete
+                  </Button>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      <div className="hidden overflow-x-auto rounded-lg border md:block">
         <Table>
           <TableHeader>
             <TableRow>
@@ -431,7 +494,7 @@ export default function MatchesPage() {
               <TableHead>Location</TableHead>
               <TableHead className="text-right">Price</TableHead>
               <TableHead>Teams</TableHead>
-              <TableHead>Winner</TableHead>
+              <TableHead>Result</TableHead>
               <TableHead className="w-[150px]">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -478,23 +541,16 @@ export default function MatchesPage() {
                   </TableCell>
                   <TableCell>{formatTeams(match)}</TableCell>
                   <TableCell>
-                    <Select
-                      value={match.winner}
-                      onValueChange={(value: Winner) =>
-                        handleSetWinner(match.id, value)
-                      }
+                    <Button
+                      variant="outline"
+                      className="h-10"
+                      disabled={match.teamA.length + match.teamB.length === 0}
+                      onClick={() => setResultMatch(match)}
                     >
-                      <SelectTrigger className="w-[130px]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {winnerOptions.map((option) => (
-                          <SelectItem key={option} value={option}>
-                            {option}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      {match.teamA.length + match.teamB.length === 0
+                        ? "No teams"
+                        : formatResult(match)}
+                    </Button>
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-1">
@@ -628,7 +684,7 @@ export default function MatchesPage() {
       </Dialog>
 
       <Dialog open={teamsDialogOpen} onOpenChange={setTeamsDialogOpen}>
-        <DialogContent ref={teamsDialogContentRef} className="min-w-[70%]">
+        <DialogContent ref={teamsDialogContentRef} className="max-h-[90vh] w-full max-w-4xl overflow-y-auto sm:min-w-[70%]">
           <DialogHeader>
             <DialogTitle>Assign Teams</DialogTitle>
           </DialogHeader>
@@ -660,7 +716,7 @@ export default function MatchesPage() {
 
             {attendees.length > 0 && (
               <div className="space-y-4">
-                <div className="flex items-center justify-between gap-3">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <h3 className="font-semibold">Assign Teams</h3>
                     <p className="text-xs text-muted-foreground">
@@ -668,7 +724,7 @@ export default function MatchesPage() {
                       It changes a little each time and does not keep positions even.
                     </p>
                   </div>
-                  <div className="flex shrink-0 items-center gap-2">
+                  <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center">
                     <Button variant="outline" size="sm" onClick={handleRandomize}>
                       <IconArrowsShuffle2 className="h-4 w-4 mr-2" />
                       Randomize
@@ -679,7 +735,7 @@ export default function MatchesPage() {
                     </Button>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                   <div className="space-y-3">
                     <h4 className="text-sm font-medium">
                       Team A ({teamA.length})
@@ -867,7 +923,7 @@ export default function MatchesPage() {
       </Dialog>
 
       <Dialog open={viewTeamsDialogOpen} onOpenChange={setViewTeamsDialogOpen}>
-        <DialogContent className="min-w-lg" showCloseButton={false}>
+        <DialogContent className="max-h-[90vh] w-full max-w-lg overflow-y-auto" showCloseButton={false}>
           <DialogHeader>
             <DialogTitle>Match Details</DialogTitle>
           </DialogHeader>
@@ -905,6 +961,10 @@ export default function MatchesPage() {
                     )}
                   </span>
                 </div>
+                <div className="flex justify-between gap-4">
+                  <span className="text-muted-foreground">Result</span>
+                  <span className="font-medium">{formatResult(viewTeamsMatch)}</span>
+                </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Cost</span>
                   <span className="font-medium">
@@ -919,7 +979,7 @@ export default function MatchesPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                 <div className="space-y-2">
                   <h4 className="text-sm font-medium">Team A (Light)</h4>
                   <div className="space-y-1">
@@ -976,6 +1036,15 @@ export default function MatchesPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <RecordResultDialog
+        match={resultMatch}
+        open={resultMatch !== null}
+        onOpenChange={(open) => {
+          if (!open) setResultMatch(null);
+        }}
+        onSave={handleSaveResult}
+      />
     </div>
   );
 }

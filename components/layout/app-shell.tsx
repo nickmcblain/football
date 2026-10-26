@@ -23,7 +23,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             ? "min-h-screen bg-[#0e0d0a] p-3 sm:p-8"
             : hideSidebar
               ? "min-h-screen p-4 sm:p-8"
-              : "ml-64 min-h-screen p-8"
+              : "min-h-screen px-4 pb-8 pt-20 md:ml-64 md:p-8"
         }
       >
         {children}

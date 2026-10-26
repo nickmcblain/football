@@ -25,6 +25,8 @@ export interface Match {
   teamA: number[];
   teamB: number[];
   winner: Winner;
+  scoreA: number | null;
+  scoreB: number | null;
 }
 
 export interface Season {

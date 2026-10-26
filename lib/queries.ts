@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ConvexHttpClient } from "convex/browser";
 import { anyApi } from "convex/server";
+import { normalizeResult } from "./results";
 import { assignByPosition, balanceTeamsByWinRate, seasonWinRates } from "./teams";
 import type { BalancedTeams } from "./teams";
 import type {
@@ -116,11 +117,17 @@ export async function assignTeams(matchId: number, input: AssignTeamsInput): Pro
   })) as Match | null;
 }
 
-export async function setMatchWinner(matchId: number, winner: Winner): Promise<Match | null> {
+export async function setMatchWinner(
+  matchId: number,
+  result: { winner: Winner; scoreA: number | null; scoreB: number | null },
+): Promise<Match | null> {
+  const normalized = normalizeResult(result);
   const client = createClient();
   return (await client.mutation(api.data.setMatchWinner, {
     matchId,
-    winner,
+    winner: normalized.winner,
+    scoreA: normalized.scoreA,
+    scoreB: normalized.scoreB,
   })) as Match | null;
 }
 

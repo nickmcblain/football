@@ -139,7 +139,7 @@ export default function PlayersPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold">Players</h1>
         <Button onClick={openCreateDialog}>
           <IconPlus className="h-4 w-4 mr-2" />
@@ -147,7 +147,7 @@ export default function PlayersPage() {
         </Button>
       </div>
 
-      <div className="border rounded-lg">
+      <div className="overflow-x-auto rounded-lg border">
         <Table>
           <TableHeader>
             <TableRow>
