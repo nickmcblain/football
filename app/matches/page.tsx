@@ -7,6 +7,7 @@ import {
   IconPencil,
   IconTrash,
   IconArrowsShuffle2,
+  IconScale,
   IconTrophy,
   IconEye,
 } from "@tabler/icons-react";
@@ -47,6 +48,16 @@ import {
 import { IconX } from "@tabler/icons-react";
 
 const winnerOptions: Winner[] = ["Team A", "Team B", "Draw", "Not Played"];
+
+type BalanceSummary = {
+  teamAWinRate: number;
+  teamBWinRate: number;
+  players: { id: number; winRate: number; matchesPlayed: number }[];
+};
+
+function formatWinRate(value: number) {
+  return Number.isInteger(value) ? `${value}%` : `${value.toFixed(1)}%`;
+}
 const formatGBP = new Intl.NumberFormat("en-GB", {
   style: "currency",
   currency: "GBP",
@@ -78,6 +89,7 @@ export default function MatchesPage() {
   const [attendees, setAttendees] = useState<number[]>([]);
   const [teamAInput, setTeamAInput] = useState("");
   const [teamBInput, setTeamBInput] = useState("");
+  const [balanceSummary, setBalanceSummary] = useState<BalanceSummary | null>(null);
   const teamsDialogContentRef = useRef<HTMLDivElement>(null);
 
   const fetchMatches = useCallback(async function fetchMatches() {
@@ -162,6 +174,7 @@ export default function MatchesPage() {
     setTeamA(match.teamA);
     setTeamB(match.teamB);
     setAttendees(Array.from(new Set([...match.teamA, ...match.teamB])));
+    setBalanceSummary(null);
     setTeamsDialogOpen(true);
   }
 
@@ -249,9 +262,36 @@ export default function MatchesPage() {
       }
       setTeamA(data.teamA);
       setTeamB(data.teamB);
+      setBalanceSummary(null);
       toast.success("Teams randomized");
     } catch {
       toast.error("Failed to randomize teams");
+    }
+  }
+
+  async function handleBalance() {
+    if (!teamsMatch || attendees.length === 0) {
+      toast.error("Select players first");
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/matches/${teamsMatch.id}/randomize`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ attendees, method: "balance" }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "Failed to balance teams");
+        return;
+      }
+      setTeamA(data.teamA);
+      setTeamB(data.teamB);
+      setBalanceSummary(data.balance ?? null);
+      toast.success("Teams balanced");
+    } catch {
+      toast.error("Failed to balance teams");
     }
   }
 
@@ -287,7 +327,12 @@ export default function MatchesPage() {
     }
   }
 
+  function clearBalanceSummary() {
+    setBalanceSummary(null);
+  }
+
   function toggleAttendee(playerId: number) {
+    clearBalanceSummary();
     if (attendees.includes(playerId)) {
       setAttendees(attendees.filter((id) => id !== playerId));
       setTeamA(teamA.filter((id) => id !== playerId));
@@ -298,6 +343,7 @@ export default function MatchesPage() {
   }
 
   function addToTeamA(playerId: number) {
+    clearBalanceSummary();
     console.log("addToTeamA", playerId);
     console.log("teamA", teamA);
     setAttendees((prev) =>
@@ -308,6 +354,7 @@ export default function MatchesPage() {
   }
 
   function addToTeamB(playerId: number) {
+    clearBalanceSummary();
     console.log("addToTeamB", playerId);
     console.log("teamB", teamB);
     setAttendees((prev) =>
@@ -318,10 +365,12 @@ export default function MatchesPage() {
   }
 
   function removeFromTeamA(playerId: number) {
+    clearBalanceSummary();
     setTeamA((prev) => prev.filter((id) => id !== playerId));
   }
 
   function removeFromTeamB(playerId: number) {
+    clearBalanceSummary();
     setTeamB((prev) => prev.filter((id) => id !== playerId));
   }
 
@@ -611,17 +660,32 @@ export default function MatchesPage() {
 
             {attendees.length > 0 && (
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold">Assign Teams</h3>
-                  <Button variant="outline" size="sm" onClick={handleRandomize}>
-                    <IconArrowsShuffle2 className="h-4 w-4 mr-2" />
-                    Randomize
-                  </Button>
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <h3 className="font-semibold">Assign Teams</h3>
+                    <p className="text-xs text-muted-foreground">
+                      Balance re-splits everyone selected using this season&apos;s win rate.
+                      It changes a little each time and does not keep positions even.
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <Button variant="outline" size="sm" onClick={handleRandomize}>
+                      <IconArrowsShuffle2 className="h-4 w-4 mr-2" />
+                      Randomize
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={handleBalance}>
+                      <IconScale className="h-4 w-4 mr-2" />
+                      Balance
+                    </Button>
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 gap-6">
                   <div className="space-y-3">
                     <h4 className="text-sm font-medium">
                       Team A ({teamA.length})
+                      {balanceSummary
+                        ? ` · ${formatWinRate(balanceSummary.teamAWinRate)}`
+                        : ""}
                     </h4>
                     <Combobox
                       items={availablePlayers}
@@ -657,6 +721,7 @@ export default function MatchesPage() {
                     <div className="space-y-1 min-h-[100px]">
                       {teamA.map((playerId) => {
                         const player = getPlayer(playerId);
+                        const rating = balanceSummary?.players.find((entry) => entry.id === playerId);
                         return (
                           <div
                             key={playerId}
@@ -664,8 +729,16 @@ export default function MatchesPage() {
                           >
                             <span>
                               {player?.name ?? `Player ${playerId}`}
-                              <span className="text-muted-foreground ml-1">
-                                ({player?.position})
+                              <span
+                                className="text-muted-foreground ml-1"
+                                title={
+                                  rating?.matchesPlayed === 0
+                                    ? "No games this season, counted as 50%"
+                                    : undefined
+                                }
+                              >
+                                ({player?.position}
+                                {rating ? ` · ${formatWinRate(rating.winRate)}` : ""})
                               </span>
                             </span>
                             <Button
@@ -685,6 +758,9 @@ export default function MatchesPage() {
                   <div className="space-y-3">
                     <h4 className="text-sm font-medium">
                       Team B ({teamB.length})
+                      {balanceSummary
+                        ? ` · ${formatWinRate(balanceSummary.teamBWinRate)}`
+                        : ""}
                     </h4>
                     <Combobox
                       items={availablePlayers}
@@ -720,6 +796,7 @@ export default function MatchesPage() {
                     <div className="space-y-1 min-h-[100px]">
                       {teamB.map((playerId) => {
                         const player = getPlayer(playerId);
+                        const rating = balanceSummary?.players.find((entry) => entry.id === playerId);
                         return (
                           <div
                             key={playerId}
@@ -727,8 +804,16 @@ export default function MatchesPage() {
                           >
                             <span>
                               {player?.name ?? `Player ${playerId}`}
-                              <span className="text-muted-foreground ml-1">
-                                ({player?.position})
+                              <span
+                                className="text-muted-foreground ml-1"
+                                title={
+                                  rating?.matchesPlayed === 0
+                                    ? "No games this season, counted as 50%"
+                                    : undefined
+                                }
+                              >
+                                ({player?.position}
+                                {rating ? ` · ${formatWinRate(rating.winRate)}` : ""})
                               </span>
                             </span>
                             <Button
