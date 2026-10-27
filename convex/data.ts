@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { pickUpcomingMatch } from "../lib/fixtures";
+import { normalizeResult } from "../lib/results";
 import { buildSeasonRoundup, calculateLeaderboard } from "../lib/statistics";
 import type { SeasonRoundup } from "../lib/types";
 
@@ -52,6 +54,8 @@ interface MatchRecord {
   teamA: number[];
   teamB: number[];
   winner: Winner;
+  scoreA: number | null;
+  scoreB: number | null;
 }
 
 interface SeasonRecord {
@@ -118,6 +122,8 @@ interface MatchDoc {
   teamA: number[];
   teamB: number[];
   winner: Winner;
+  scoreA?: number;
+  scoreB?: number;
   seasonId?: number;
 }
 
@@ -162,6 +168,8 @@ const matchRecordValidator = v.object({
   teamA: v.array(v.number()),
   teamB: v.array(v.number()),
   winner: winnerValidator,
+  scoreA: v.union(v.number(), v.null()),
+  scoreB: v.union(v.number(), v.null()),
 });
 
 const paymentRecordValidator = v.object({
@@ -182,6 +190,26 @@ const seasonRecordValidator = v.object({
   closedAt: v.union(v.number(), v.null()),
   matchCount: v.number(),
   completedMatchCount: v.number(),
+});
+
+const fixturePlayerValidator = v.object({
+  id: v.number(),
+  name: v.string(),
+  position: positionValidator,
+});
+
+const upcomingFixtureValidator = v.object({
+  id: v.number(),
+  date: v.string(),
+  time: v.string(),
+  location: v.string(),
+  pitch: v.string(),
+  winner: winnerValidator,
+  scoreA: v.union(v.number(), v.null()),
+  scoreB: v.union(v.number(), v.null()),
+  seasonName: v.string(),
+  teamA: v.array(fixturePlayerValidator),
+  teamB: v.array(fixturePlayerValidator),
 });
 
 const leaderboardEntryValidator = v.object({
@@ -223,6 +251,8 @@ function toMatchRecord(doc: MatchDoc): MatchRecord {
     teamA: doc.teamA,
     teamB: doc.teamB,
     winner: doc.winner,
+    scoreA: doc.scoreA ?? null,
+    scoreB: doc.scoreB ?? null,
   };
 }
 
@@ -816,6 +846,8 @@ export const setMatchWinner = mutation({
   args: {
     matchId: v.number(),
     winner: winnerValidator,
+    scoreA: v.optional(v.union(v.number(), v.null())),
+    scoreB: v.optional(v.union(v.number(), v.null())),
   },
   returns: v.union(matchRecordValidator, v.null()),
   handler: async (ctx, args): Promise<MatchRecord | null> => {
@@ -824,25 +856,37 @@ export const setMatchWinner = mutation({
       return null;
     }
 
+    const result = normalizeResult({
+      winner: args.winner,
+      scoreA: args.scoreA === undefined ? (matchDoc.scoreA ?? null) : args.scoreA,
+      scoreB: args.scoreB === undefined ? (matchDoc.scoreB ?? null) : args.scoreB,
+    });
+
     const hasTeams = matchDoc.teamA.length > 0 || matchDoc.teamB.length > 0;
-    if (!hasTeams && args.winner !== "Not Played") {
+    if (!hasTeams && result.winner !== "Not Played") {
       throw new Error("Cannot set winner without teams assigned");
     }
     const season = matchDoc.seasonId === undefined
       ? null
       : await getSeasonDocByLegacyId(ctx, matchDoc.seasonId);
-    if (season?.status === "closed" && args.winner === "Not Played") {
+    if (season?.status === "closed" && result.winner === "Not Played") {
       throw new Error("Closed-season matches must remain completed");
     }
 
     const updatedMatch: MatchDoc = {
       ...matchDoc,
-      winner: args.winner,
+      winner: result.winner,
+      scoreA: result.scoreA ?? undefined,
+      scoreB: result.scoreB ?? undefined,
     };
 
-    await ctx.db.patch(matchDoc._id, { winner: args.winner });
+    await ctx.db.patch(matchDoc._id, {
+      winner: result.winner,
+      scoreA: result.scoreA ?? undefined,
+      scoreB: result.scoreB ?? undefined,
+    });
 
-    if (args.winner === "Not Played") {
+    if (result.winner === "Not Played") {
       await deletePaymentsForMatch(ctx, args.matchId);
     } else {
       await recalculateMatchPayments(ctx, updatedMatch);
@@ -949,6 +993,44 @@ export const getLeaderboard = query({
     if (!season) return [];
     const matches = await listMatchesBySeason(ctx, season.legacyId);
     return calculateLeaderboard(statsPlayers(players), statsMatches(matches), false);
+  },
+});
+
+export const getUpcomingFixture = query({
+  args: {},
+  returns: v.union(upcomingFixtureValidator, v.null()),
+  handler: async (ctx) => {
+    const season = await getActiveSeasonDoc(ctx);
+    if (!season) return null;
+    const matches = await listMatchesBySeason(ctx, season.legacyId);
+    const upcoming = pickUpcomingMatch(matches);
+    if (!upcoming) return null;
+
+    const players = await listPlayersSortedByName(ctx);
+    const byId = new Map(players.map((player) => [player.legacyId, player]));
+    const lineup = (ids: number[]) =>
+      ids.map((id) => {
+        const player = byId.get(id);
+        return {
+          id,
+          name: player?.name ?? `Player ${id}`,
+          position: player?.position ?? "Midfield",
+        };
+      });
+
+    return {
+      id: upcoming.legacyId,
+      date: upcoming.date,
+      time: upcoming.time,
+      location: upcoming.location,
+      pitch: upcoming.pitch,
+      winner: upcoming.winner,
+      scoreA: upcoming.scoreA ?? null,
+      scoreB: upcoming.scoreB ?? null,
+      seasonName: season.name,
+      teamA: lineup(upcoming.teamA),
+      teamB: lineup(upcoming.teamB),
+    };
   },
 });
 

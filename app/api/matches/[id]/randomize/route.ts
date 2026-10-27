@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { randomizeTeams, assignTeams, getMatchById } from "@/lib/queries";
+import { randomizeTeams, balanceTeams, assignTeams, getMatchById } from "@/lib/queries";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -40,15 +40,39 @@ export async function POST(request: Request, { params }: Params) {
       );
     }
 
-    const { teamA, teamB } = await randomizeTeams({
-      playerIds: attendees,
-      lockedTeamA,
-      lockedTeamB,
-    });
+    const method = body.method ?? "random";
+    if (method !== "random" && method !== "balance") {
+      return NextResponse.json(
+        { error: "method must be random or balance" },
+        { status: 400 }
+      );
+    }
 
-    const updatedMatch = await assignTeams(matchId, { teamA, teamB });
+    const selection =
+      method === "balance"
+        ? await balanceTeams({
+            playerIds: attendees,
+            lockedTeamA,
+            lockedTeamB,
+            seasonId: match.seasonId,
+            excludeMatchId: matchId,
+          })
+        : await randomizeTeams({
+            playerIds: attendees,
+            lockedTeamA,
+            lockedTeamB,
+          });
+
+    const updatedMatch = await assignTeams(matchId, {
+      teamA: selection.teamA,
+      teamB: selection.teamB,
+    });
     if (!updatedMatch) {
       return NextResponse.json({ error: "Failed to assign teams" }, { status: 500 });
+    }
+
+    if (method === "balance" && "teamAWinRate" in selection) {
+      return NextResponse.json({ ...updatedMatch, balance: selection });
     }
 
     return NextResponse.json(updatedMatch);

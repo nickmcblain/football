@@ -28,6 +28,8 @@ function match(
     teamA,
     teamB,
     winner,
+    scoreA: null,
+    scoreB: null,
   };
 }
 

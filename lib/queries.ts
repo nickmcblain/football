@@ -1,6 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ConvexHttpClient } from "convex/browser";
 import { anyApi } from "convex/server";
+import { normalizeResult } from "./results";
+import { assignByPosition, balanceTeamsByWinRate, seasonWinRates } from "./teams";
+import type { BalancedTeams } from "./teams";
 import type {
   Player,
   Match,
@@ -16,6 +19,7 @@ import type {
   Position,
   Season,
   SeasonRoundup,
+  UpcomingFixture,
 } from "./types";
 
 const api = anyApi as any;
@@ -114,11 +118,17 @@ export async function assignTeams(matchId: number, input: AssignTeamsInput): Pro
   })) as Match | null;
 }
 
-export async function setMatchWinner(matchId: number, winner: Winner): Promise<Match | null> {
+export async function setMatchWinner(
+  matchId: number,
+  result: { winner: Winner; scoreA: number | null; scoreB: number | null },
+): Promise<Match | null> {
+  const normalized = normalizeResult(result);
   const client = createClient();
   return (await client.mutation(api.data.setMatchWinner, {
     matchId,
-    winner,
+    winner: normalized.winner,
+    scoreA: normalized.scoreA,
+    scoreB: normalized.scoreB,
   })) as Match | null;
 }
 
@@ -148,6 +158,11 @@ export async function markAllPaymentsPaidForPlayer(playerId: number): Promise<vo
 export async function getLeaderboard(season?: string): Promise<LeaderboardEntry[]> {
   const client = createClient();
   return (await client.query(api.data.getLeaderboard, { season })) as LeaderboardEntry[];
+}
+
+export async function getUpcomingFixture(): Promise<UpcomingFixture | null> {
+  const client = createClient();
+  return (await client.query(api.data.getUpcomingFixture, {})) as UpcomingFixture | null;
 }
 
 export async function getSeasons(): Promise<Season[]> {
@@ -218,42 +233,27 @@ export async function randomizeTeams(input: RandomizeTeamsInput): Promise<Random
     ids: unassignedIds,
   })) as RandomizePlayer[];
 
-  const byPosition: Record<Position, RandomizePlayer[]> = {
-    Attack: [],
-    Midfield: [],
-    Defense: [],
-  };
-
-  for (const player of fetchedPlayers) {
-    byPosition[player.position].push(player);
-  }
-
-  for (const position of Object.keys(byPosition) as Position[]) {
-    byPosition[position] = shuffle(byPosition[position]);
-  }
-
-  const teamA: number[] = [...lockedTeamA];
-  const teamB: number[] = [...lockedTeamB];
-
-  for (const position of ["Defense", "Midfield", "Attack"] as Position[]) {
-    const positionPlayers = byPosition[position];
-    for (let i = 0; i < positionPlayers.length; i += 1) {
-      if (teamA.length <= teamB.length) {
-        teamA.push(positionPlayers[i].id);
-      } else {
-        teamB.push(positionPlayers[i].id);
-      }
-    }
-  }
-
-  return { teamA, teamB };
+  return assignByPosition(fetchedPlayers, lockedTeamA, lockedTeamB);
 }
 
-function shuffle<T>(array: T[]): T[] {
-  const result = [...array];
-  for (let i = result.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [result[i], result[j]] = [result[j], result[i]];
+export async function balanceTeams(
+  input: RandomizeTeamsInput & { seasonId: number; excludeMatchId?: number },
+): Promise<BalancedTeams> {
+  const { playerIds, lockedTeamA = [], lockedTeamB = [], seasonId, excludeMatchId } = input;
+  const ids = [...new Set([...playerIds, ...lockedTeamA, ...lockedTeamB])];
+
+  if (ids.length === 0) {
+    return {
+      teamA: [...lockedTeamA],
+      teamB: [...lockedTeamB],
+      teamAWinRate: 0,
+      teamBWinRate: 0,
+      players: [],
+    };
   }
-  return result;
+
+  const client = createClient();
+  const matches = (await client.query(api.data.getAllMatches, { seasonId })) as Match[];
+  const rates = seasonWinRates(ids, matches, excludeMatchId);
+  return balanceTeamsByWinRate(rates, lockedTeamA, lockedTeamB);
 }
