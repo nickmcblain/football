@@ -51,7 +51,7 @@ function LoginContent() {
     <div className="mx-auto flex min-h-screen w-full max-w-md items-center px-6">
       <div className="w-full rounded-xl bg-card p-6 shadow-sm">
         <h1 className="flex justify-center">
-          <Image src="/logo.png" alt="Bombers FC" width={232} height={288} priority className="h-32 w-auto" />
+          <Image src="/logo.png" alt="Bombers FC" width={232} height={288} priority className="h-[5.333rem] w-auto" />
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
           Enter the site password to continue.

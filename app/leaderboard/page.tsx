@@ -80,7 +80,7 @@ export default function LeaderboardPage() {
           width={232}
           height={288}
           priority
-          className="h-36 w-auto"
+          className="h-24 w-auto"
         />
       </h1>
       <button
