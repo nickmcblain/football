@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { toast } from "sonner";
 import type { FormResult, LeaderboardEntry, Season, UpcomingFixture } from "@/lib/types";
@@ -72,7 +73,16 @@ export default function LeaderboardPage() {
 
   return (
     <div className="mx-auto max-w-md pt-6">
-      <h1 className="mb-4 text-center text-lg font-medium tracking-tight">Bombers FC</h1>
+      <h1 className="mb-5 flex justify-center">
+        <Image
+          src="/logo.png"
+          alt="Bombers FC"
+          width={232}
+          height={288}
+          priority
+          className="h-36 w-auto"
+        />
+      </h1>
       <button
         type="button"
         onClick={() => fixture && setTeamsOpen(true)}
