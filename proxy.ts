@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { AUTH_COOKIE_NAME, isAuthEnabled, isValidAuthToken } from "@/lib/auth";
 
 const PUBLIC_PATHS = ["/leaderboard", "/wrapped", "/login"];
+const PUBLIC_EXACT_PATHS = ["/matches"];
 const PUBLIC_API_PATHS = ["/api/leaderboard", "/api/public", "/api/auth/login"];
 
 function isStaticAsset(pathname: string) {
@@ -9,6 +10,7 @@ function isStaticAsset(pathname: string) {
 }
 
 function isPublicPath(pathname: string) {
+  if (PUBLIC_EXACT_PATHS.includes(pathname)) return true;
   return PUBLIC_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
 }
 
