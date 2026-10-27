@@ -163,13 +163,11 @@ export default function LeaderboardPage() {
               key={entry.playerId}
               type="button"
               onClick={() => setPlayer(entry)}
-              className={`grid w-full ${TABLE_COLUMNS} items-center px-3 py-3 text-left ${
-                index % 2 === 1 ? "bg-neutral-50" : "bg-white"
-              }`}
+              className={`grid w-full ${TABLE_COLUMNS} items-center px-3 py-3 text-left ${rowBackground(entry.rank, index)}`}
             >
               <span className="text-sm text-muted-foreground">{entry.rank}</span>
               <span className="flex min-w-0 items-center gap-2">
-                <span className="grid size-7 shrink-0 place-items-center rounded-full bg-neutral-100 text-xs font-medium">
+                <span className={`grid size-7 shrink-0 place-items-center rounded-full text-xs font-medium ${initialBackground(entry.rank)}`}>
                   {entry.name.slice(0, 1).toUpperCase()}
                 </span>
                 <span className="truncate text-sm font-medium">{entry.name}</span>
@@ -360,6 +358,20 @@ function formatDate(date: string | null) {
 }
 
 const TABLE_COLUMNS = "grid-cols-[2rem_minmax(0,1fr)_1.5rem_1.5rem_2.75rem_2.25rem]";
+
+function rowBackground(rank: number, index: number) {
+  if (rank === 1) return "bg-[#f6edd4]";
+  if (rank === 2) return "bg-[#e7ebf0]";
+  if (rank === 3) return "bg-[#f4e4d4]";
+  return index % 2 === 1 ? "bg-neutral-50" : "bg-white";
+}
+
+function initialBackground(rank: number) {
+  if (rank === 1) return "bg-[#efe0b0]";
+  if (rank === 2) return "bg-[#d5dbe3]";
+  if (rank === 3) return "bg-[#e8d0b8]";
+  return "bg-neutral-100";
+}
 
 function ordinal(rank: number) {
   const suffix = rank % 10 === 1 && rank % 100 !== 11
