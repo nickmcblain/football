@@ -77,7 +77,7 @@ export default function LeaderboardPage() {
         type="button"
         onClick={() => fixture && setTeamsOpen(true)}
         disabled={!fixture}
-        className="mx-4 block w-[calc(100%-2rem)] rounded-[28px] bg-white px-4 py-5 text-center shadow-[0_12px_40px_-24px_rgba(15,23,42,0.45)] disabled:cursor-default"
+        className="mx-4 block w-[calc(100%-2rem)] rounded-xl bg-white px-4 py-5 text-center shadow-[0_12px_40px_-24px_rgba(15,23,42,0.45)] disabled:cursor-default"
       >
         {fixture ? (
           <>
@@ -132,9 +132,9 @@ export default function LeaderboardPage() {
         </SeasonPill>
       </div>
 
-      <div className="mx-4 mt-4 overflow-hidden rounded-3xl bg-white">
+      <div className="mx-4 mt-4 overflow-hidden rounded-xl bg-white">
         <div className={`grid ${TABLE_COLUMNS} items-center px-3 py-3 text-xs text-muted-foreground`}>
-          <span>Post</span>
+          <span className="sr-only">Position</span>
           <span>Player</span>
           <span className="text-center">P</span>
           <span className="text-center">W</span>
@@ -252,7 +252,7 @@ function SeasonPill({
     <button
       type="button"
       onClick={onClick}
-      className={`h-10 shrink-0 rounded-full px-4 text-sm ${
+      className={`h-10 shrink-0 rounded-lg px-4 text-sm ${
         active ? "bg-neutral-900 text-white" : "bg-white text-muted-foreground"
       }`}
     >
@@ -308,7 +308,7 @@ function Lineup({
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl bg-neutral-50 px-3 py-3">
+    <div className="rounded-lg bg-neutral-50 px-3 py-3">
       <div className="text-lg font-semibold">{value}</div>
       <div className="text-xs text-muted-foreground">{label}</div>
     </div>

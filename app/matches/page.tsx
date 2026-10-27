@@ -436,16 +436,16 @@ export default function MatchesPage() {
 
       <div className="space-y-3 md:hidden">
         {loading ? (
-          <div className="rounded-3xl bg-card py-8 text-center text-muted-foreground shadow-sm">Loading...</div>
+          <div className="rounded-xl bg-card py-8 text-center text-muted-foreground shadow-sm">Loading...</div>
         ) : matches.length === 0 ? (
-          <div className="rounded-3xl bg-card px-4 py-8 text-center text-muted-foreground shadow-sm">
+          <div className="rounded-xl bg-card px-4 py-8 text-center text-muted-foreground shadow-sm">
             No matches yet. Create one to get started.
           </div>
         ) : (
           matches.map((match) => {
             const canRecord = match.teamA.length + match.teamB.length > 0;
             return (
-              <div key={match.id} className="space-y-3 rounded-3xl bg-card p-4 shadow-sm">
+              <div key={match.id} className="space-y-3 rounded-xl bg-card p-4 shadow-sm">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <div className="font-medium">{match.date}</div>
@@ -486,7 +486,7 @@ export default function MatchesPage() {
         )}
       </div>
 
-      <div className="hidden overflow-x-auto rounded-3xl bg-card shadow-sm md:block">
+      <div className="hidden overflow-x-auto rounded-xl bg-card shadow-sm md:block">
         <Table>
           <TableHeader>
             <TableRow>
