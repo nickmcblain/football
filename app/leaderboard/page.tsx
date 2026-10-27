@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { toast } from "sonner";
 import type { FormResult, LeaderboardEntry, Season, UpcomingFixture } from "@/lib/types";
@@ -72,12 +73,21 @@ export default function LeaderboardPage() {
 
   return (
     <div className="mx-auto max-w-md pt-6">
-      <h1 className="mb-4 text-center text-lg font-medium tracking-tight">Bombers FC</h1>
+      <h1 className="mb-5 flex justify-center">
+        <Image
+          src="/logo.png"
+          alt="Bombers FC"
+          width={232}
+          height={288}
+          priority
+          className="h-24 w-auto"
+        />
+      </h1>
       <button
         type="button"
         onClick={() => fixture && setTeamsOpen(true)}
         disabled={!fixture}
-        className="mx-4 block w-[calc(100%-2rem)] rounded-[28px] bg-white px-4 py-5 text-center shadow-[0_12px_40px_-24px_rgba(15,23,42,0.45)] disabled:cursor-default"
+        className="mx-4 block w-[calc(100%-2rem)] rounded-xl bg-white px-4 py-5 text-center shadow-[0_12px_40px_-24px_rgba(15,23,42,0.45)] disabled:cursor-default"
       >
         {fixture ? (
           <>
@@ -132,9 +142,9 @@ export default function LeaderboardPage() {
         </SeasonPill>
       </div>
 
-      <div className="mx-4 mt-4 overflow-hidden rounded-3xl bg-white">
+      <div className="mx-4 mt-4 overflow-hidden rounded-xl bg-white">
         <div className={`grid ${TABLE_COLUMNS} items-center px-3 py-3 text-xs text-muted-foreground`}>
-          <span>Post</span>
+          <span className="sr-only">Position</span>
           <span>Player</span>
           <span className="text-center">P</span>
           <span className="text-center">W</span>
@@ -153,13 +163,11 @@ export default function LeaderboardPage() {
               key={entry.playerId}
               type="button"
               onClick={() => setPlayer(entry)}
-              className={`grid w-full ${TABLE_COLUMNS} items-center px-3 py-3 text-left ${
-                index % 2 === 1 ? "bg-neutral-50" : "bg-white"
-              }`}
+              className={`grid w-full ${TABLE_COLUMNS} items-center px-3 py-3 text-left ${rowBackground(entry.rank, index)}`}
             >
               <span className="text-sm text-muted-foreground">{entry.rank}</span>
               <span className="flex min-w-0 items-center gap-2">
-                <span className="grid size-7 shrink-0 place-items-center rounded-full bg-neutral-100 text-xs font-medium">
+                <span className={`grid size-7 shrink-0 place-items-center rounded-full text-xs font-medium ${initialBackground(entry.rank)}`}>
                   {entry.name.slice(0, 1).toUpperCase()}
                 </span>
                 <span className="truncate text-sm font-medium">{entry.name}</span>
@@ -252,7 +260,7 @@ function SeasonPill({
     <button
       type="button"
       onClick={onClick}
-      className={`h-10 shrink-0 rounded-full px-4 text-sm ${
+      className={`h-10 shrink-0 rounded-lg px-4 text-sm ${
         active ? "bg-neutral-900 text-white" : "bg-white text-muted-foreground"
       }`}
     >
@@ -308,7 +316,7 @@ function Lineup({
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl bg-neutral-50 px-3 py-3">
+    <div className="rounded-lg bg-neutral-50 px-3 py-3">
       <div className="text-lg font-semibold">{value}</div>
       <div className="text-xs text-muted-foreground">{label}</div>
     </div>
@@ -350,6 +358,20 @@ function formatDate(date: string | null) {
 }
 
 const TABLE_COLUMNS = "grid-cols-[2rem_minmax(0,1fr)_1.5rem_1.5rem_2.75rem_2.25rem]";
+
+function rowBackground(rank: number, index: number) {
+  if (rank === 1) return "bg-[#f6edd4]";
+  if (rank === 2) return "bg-[#e7ebf0]";
+  if (rank === 3) return "bg-[#f4e4d4]";
+  return index % 2 === 1 ? "bg-neutral-50" : "bg-white";
+}
+
+function initialBackground(rank: number) {
+  if (rank === 1) return "bg-[#efe0b0]";
+  if (rank === 2) return "bg-[#d5dbe3]";
+  if (rank === 3) return "bg-[#e8d0b8]";
+  return "bg-neutral-100";
+}
 
 function ordinal(rank: number) {
   const suffix = rank % 10 === 1 && rank % 100 !== 11

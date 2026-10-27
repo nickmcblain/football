@@ -55,7 +55,7 @@ BOMBERS_FC_AUTH_SECRET=any-random-secret-string
 ```
 
 - All app routes and APIs require authentication after this is set.
-- Public exceptions: `/leaderboard` and `/api/leaderboard`.
+- Public exceptions: `/leaderboard`, `/matches`, `/api/leaderboard`, and `/api/public`. `/matches` is a read-only fixture list. Editing stays at `/manage/matches`.
 - Visit `/login` to enter the password and create an auth cookie.
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.

@@ -2,20 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  IconBallFootball,
-  IconCalendar,
-  IconCash,
-  IconTrophy,
-  IconUsers,
-} from "@tabler/icons-react";
+import { IconCalendar, IconTrophy } from "@tabler/icons-react";
 
 const ITEMS = [
   { href: "/leaderboard", label: "Table", icon: IconTrophy },
   { href: "/matches", label: "Matches", icon: IconCalendar },
-  { href: "/players", label: "Players", icon: IconUsers },
-  { href: "/payments", label: "Payments", icon: IconCash },
-  { href: "/seasons", label: "Seasons", icon: IconBallFootball },
 ];
 
 export function BottomNav() {

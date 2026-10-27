@@ -134,7 +134,7 @@ export default function SeasonsPage() {
       </div>
 
       {loading ? (
-        <div className="rounded-3xl bg-card p-10 text-center text-muted-foreground shadow-sm">Loading…</div>
+        <div className="rounded-xl bg-card p-10 text-center text-muted-foreground shadow-sm">Loading…</div>
       ) : seasons.length === 0 ? (
         <Card className="border-dashed py-12 text-center">
           <CardContent>

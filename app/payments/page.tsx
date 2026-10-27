@@ -93,7 +93,7 @@ export default function PaymentsPage() {
           <h1 className="text-2xl font-semibold tracking-tight">Payments</h1>
           <p className="text-muted-foreground">Track player payments per match</p>
         </div>
-        <div className="rounded-3xl bg-card p-8 text-center text-muted-foreground shadow-sm">
+        <div className="rounded-xl bg-card p-8 text-center text-muted-foreground shadow-sm">
           No payment data yet. Create matches and assign players to see the payment matrix.
         </div>
       </div>
@@ -111,7 +111,7 @@ export default function PaymentsPage() {
         {matrix.players.map((player) => {
           const totalOwed = getPlayerTotal(player.id)
           return (
-            <div key={player.id} className="rounded-3xl bg-card p-4 shadow-sm">
+            <div key={player.id} className="rounded-xl bg-card p-4 shadow-sm">
               <div className="flex items-center justify-between gap-3">
                 <div className="font-medium">{player.name}</div>
                 <div className={totalOwed > 0 ? "font-semibold text-destructive" : "font-semibold text-green-700"}>
@@ -149,7 +149,7 @@ export default function PaymentsPage() {
         })}
       </div>
 
-      <div className="hidden overflow-auto rounded-3xl bg-card shadow-sm md:block">
+      <div className="hidden overflow-auto rounded-xl bg-card shadow-sm md:block">
         <Table>
           <TableHeader>
             <TableRow>
