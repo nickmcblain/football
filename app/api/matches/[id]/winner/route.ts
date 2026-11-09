@@ -31,7 +31,7 @@ export async function PUT(request: Request, { params }: Params) {
       );
     }
 
-    const match = await setMatchWinner(matchId, {
+    const { match, scoresSaved } = await setMatchWinner(matchId, {
       winner: body.winner,
       scoreA: readScore(body.scoreA),
       scoreB: readScore(body.scoreB),
@@ -40,7 +40,7 @@ export async function PUT(request: Request, { params }: Params) {
       return NextResponse.json({ error: "Match not found" }, { status: 404 });
     }
 
-    return NextResponse.json(match);
+    return NextResponse.json({ ...match, scoresSaved });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to set winner";
     return NextResponse.json({ error: message }, { status: 400 });

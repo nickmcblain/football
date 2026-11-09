@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ConvexHttpClient } from "convex/browser";
 import { anyApi } from "convex/server";
-import { normalizeResult } from "./results";
+import { backendRejectsScoreFields, winnerMutationArgs } from "./results";
 import { assignByPosition, balanceTeamsByWinRate, seasonWinRates } from "./teams";
 import type { BalancedTeams } from "./teams";
 import type {
@@ -121,15 +121,25 @@ export async function assignTeams(matchId: number, input: AssignTeamsInput): Pro
 export async function setMatchWinner(
   matchId: number,
   result: { winner: Winner; scoreA: number | null; scoreB: number | null },
-): Promise<Match | null> {
-  const normalized = normalizeResult(result);
+): Promise<{ match: Match | null; scoresSaved: boolean }> {
+  const scored = winnerMutationArgs(matchId, result, true);
   const client = createClient();
-  return (await client.mutation(api.data.setMatchWinner, {
-    matchId,
-    winner: normalized.winner,
-    scoreA: normalized.scoreA,
-    scoreB: normalized.scoreB,
-  })) as Match | null;
+  try {
+    const match = (await client.mutation(api.data.setMatchWinner, scored)) as Match | null;
+    return { match, scoresSaved: true };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    // Live Convex was last deployed before scores existed, so it rejects scoreA/scoreB.
+    if (!backendRejectsScoreFields(message)) throw error;
+    const match = (await client.mutation(
+      api.data.setMatchWinner,
+      winnerMutationArgs(matchId, result, false),
+    )) as Match | null;
+    return {
+      match,
+      scoresSaved: scored.scoreA === null && scored.scoreB === null,
+    };
+  }
 }
 
 export async function getAllPayments(): Promise<Payment[]> {

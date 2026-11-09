@@ -1,5 +1,11 @@
 import { describe, expect, test } from "bun:test";
-import { formatResult, normalizeResult, winnerFromScores } from "./results";
+import {
+  backendRejectsScoreFields,
+  formatResult,
+  normalizeResult,
+  winnerFromScores,
+  winnerMutationArgs,
+} from "./results";
 
 describe("match results", () => {
   test("reads the winner from the score", () => {
@@ -22,6 +28,11 @@ describe("match results", () => {
       scoreA: 1,
       scoreB: 4,
     });
+    expect(normalizeResult({ winner: "Draw", scoreA: 15, scoreB: 15 })).toEqual({
+      winner: "Draw",
+      scoreA: 15,
+      scoreB: 15,
+    });
   });
 
   test("rejects a single score and marks an unplayed match as unscored", () => {
@@ -33,6 +44,26 @@ describe("match results", () => {
       scoreA: null,
       scoreB: null,
     });
+  });
+
+  test("sends both scores, then the winner alone when the backend rejects them", () => {
+    expect(winnerMutationArgs(22, { winner: "Draw", scoreA: 15, scoreB: 15 }, true)).toEqual({
+      matchId: 22,
+      winner: "Draw",
+      scoreA: 15,
+      scoreB: 15,
+    });
+    expect(winnerMutationArgs(22, { winner: "Draw", scoreA: 15, scoreB: 15 }, false)).toEqual({
+      matchId: 22,
+      winner: "Draw",
+    });
+  });
+
+  test("detects a backend that still rejects score fields", () => {
+    const message =
+      '[Request ID: f654c05e285b5a0c] Server Error\nArgumentValidationError: Object contains extra field `scoreA` that is not in the validator. Object: {matchId: "22.0", scoreA: 15.0, scoreB: 15.0, winner: "Draw"}\nValidator: v.object({matchId: v.float64(), winner: v.union(v.literal("Team A"), v.literal("Team B"), v.literal("Draw"), v.literal("Not Played"))})';
+    expect(backendRejectsScoreFields(message)).toBe(true);
+    expect(backendRejectsScoreFields("Cannot set winner without teams assigned")).toBe(false);
   });
 
   test("formats light and dark scores for the list", () => {

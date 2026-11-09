@@ -86,8 +86,8 @@ export function RecordResultDialog({
   useEffect(() => {
     if (!match || !open) return;
     setWinner(match.winner);
-    setScoreA(match.scoreA === null ? "" : String(match.scoreA));
-    setScoreB(match.scoreB === null ? "" : String(match.scoreB));
+    setScoreA(match.scoreA === null || match.scoreA === undefined ? "" : String(match.scoreA));
+    setScoreB(match.scoreB === null || match.scoreB === undefined ? "" : String(match.scoreB));
   }, [match, open]);
 
   function applyScore(nextA: string, nextB: string) {

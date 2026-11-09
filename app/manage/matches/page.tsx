@@ -313,7 +313,13 @@ export default function MatchesPage() {
         toast.error(data.error || "Failed to save result");
         return;
       }
-      toast.success(normalized.winner === "Not Played" ? "Result cleared" : "Result saved");
+      toast.success(
+        normalized.winner === "Not Played"
+          ? "Result cleared"
+          : data.scoresSaved === false
+            ? "Result saved, score not stored"
+            : "Result saved",
+      );
       setResultMatch(null);
       fetchMatches();
     } catch (error) {

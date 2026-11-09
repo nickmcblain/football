@@ -42,3 +42,34 @@ export function formatResult(match: MatchResultInput): string {
   }
   return side;
 }
+
+export function backendRejectsScoreFields(message: string): boolean {
+  return /extra field [`'"]score[AB][`'"]/.test(message);
+}
+
+export function winnerMutationArgs(
+  matchId: number,
+  result: MatchResultInput,
+  includeScores: true,
+): { matchId: number; winner: Winner; scoreA: number | null; scoreB: number | null };
+export function winnerMutationArgs(
+  matchId: number,
+  result: MatchResultInput,
+  includeScores: false,
+): { matchId: number; winner: Winner };
+export function winnerMutationArgs(
+  matchId: number,
+  result: MatchResultInput,
+  includeScores: boolean,
+) {
+  const normalized = normalizeResult(result);
+  if (!includeScores) {
+    return { matchId, winner: normalized.winner };
+  }
+  return {
+    matchId,
+    winner: normalized.winner,
+    scoreA: normalized.scoreA,
+    scoreB: normalized.scoreB,
+  };
+}
